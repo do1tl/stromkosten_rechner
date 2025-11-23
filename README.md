@@ -37,7 +37,7 @@ Eine Home Assistant Custom Integration zur Berechnung von Stromkosten und Einspa
 2. Klicke auf "Integration hinzufügen"
 3. Suche nach "Stromkosten Rechner"
 4. Gib folgende Daten ein:
-   - **Shelly 3EM Phase 1, 2, 3**: Die Entity-IDs deiner Shelly Phasen
+   - **Shelly 3EM Phase 1, 2, 3**: Die Entity-IDs deiner Shelly Phasen (z.B. `sensor.shelly_power_1`)
    - **Hoymiles 1-4**: Die Entity-IDs deiner Hoymiles (täglicher Ertrag in kWh)
    - **kWh Preis**: Dein Strompreis in EUR (z.B. 0.35)
 
@@ -45,11 +45,11 @@ Eine Home Assistant Custom Integration zur Berechnung von Stromkosten und Einspa
 
 Die Integration erstellt folgende Sensoren:
 
-- `sensor.stromkosten_gesamtverbrauch` - Summe aller Shelly-Phasen (W)
-- `sensor.stromkosten_solarertrag` - Summe aller Hoymiles (kWh)
-- `sensor.stromkosten_netzbezug` - Strom vom Netz (W)
-- `sensor.stromkosten_tagliche_kosten` - Kosten heute (EUR)
-- `sensor.stromkosten_einsparungen` - Einsparungen heute (EUR)
+- `sensor.gesamtverbrauch` - Summe aller Shelly-Phasen (W)
+- `sensor.solarertrag_heute` - Summe aller Hoymiles (kWh)
+- `sensor.netzbezug_aktuell` - Strom vom Netz (W)
+- `sensor.stromkosten_heute` - Kosten heute (EUR)
+- `sensor.einsparungen_heute` - Einsparungen heute (EUR)
 
 ## Beispiel Dashboard
 
@@ -57,13 +57,13 @@ Die Integration erstellt folgende Sensoren:
 type: entities
 title: Stromkosten
 entities:
-  - entity: sensor.stromkosten_gesamtverbrauch
+  - entity: sensor.gesamtverbrauch
     name: Gesamtverbrauch
-  - entity: sensor.stromkosten_solarertrag
+  - entity: sensor.solarertrag_heute
     name: Solar Ertrag heute
-  - entity: sensor.stromkosten_tagliche_kosten
+  - entity: sensor.stromkosten_heute
     name: Kosten heute
-  - entity: sensor.stromkosten_einsparungen
+  - entity: sensor.einsparungen_heute
     name: Ersparnis heute
 ```
 

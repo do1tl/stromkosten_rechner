@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Stromkosten Rechner konfigurieren",
+        "description": "Gib die Entity-IDs deiner Geräte an",
+        "data": {
+          "shelly_phase_1": "Shelly 3EM Phase 1",
+          "shelly_phase_2": "Shelly 3EM Phase 2",
+          "shelly_phase_3": "Shelly 3EM Phase 3",
+          "hoymiles_1": "Hoymiles 1 (täglich)",
+          "hoymiles_2": "Hoymiles 2 (optional)",
+          "hoymiles_3": "Hoymiles 3 (optional)",
+          "hoymiles_4": "Hoymiles 4 (optional)",
+          "kwh_preis": "Strompreis (EUR/kWh)"
+        }
+      }
+    },
+    "error": {
+      "entity_not_found": "Entity wurde nicht gefunden",
+      "required": "Dieses Feld ist erforderlich",
+      "unknown": "Ein unbekannter Fehler ist aufgetreten"
+    },
+    "abort": {
+      "already_configured": "Diese Konfiguration existiert bereits"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Optionen ändern",
+        "data": {
+          "kwh_preis": "Strompreis (EUR/kWh)"
+        }
+      }
+    }
+  }
+}
