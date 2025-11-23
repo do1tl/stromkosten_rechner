@@ -6,6 +6,7 @@ from datetime import datetime
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.storage import Store
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,7 +27,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data.setdefault(DOMAIN, {})
     
     # Load yearly data from Storage API
-    store = hass.helpers.storage.Store(STORAGE_VERSION, STORAGE_KEY)
+    store = Store(hass, STORAGE_VERSION, STORAGE_KEY)
     yearly_data = await store.async_load()
     
     if yearly_data is None:
