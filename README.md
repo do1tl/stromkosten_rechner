@@ -5,7 +5,7 @@ Home Assistant Integration zur Berechnung von Stromkosten und Solar-Einsparungen
 ## Installation via HACS
 
 1. Füge dieses Repository zu HACS hinzu als Custom Repository
-2. URL: `https://github.com/do1tl/stromkosten-rechner`
+2. URL: `https://github.com/do1tl/stromkosten_rechner`
 3. Kategorie: Integration
 4. Installiere "Stromkosten Rechner"
 5. Starte Home Assistant neu
@@ -28,4 +28,4 @@ Benötigte Entity IDs:
 
 ## Support
 
-[GitHub Issues](https://github.com/do1tl/stromkosten-rechner/issues)
+[GitHub Issues](https://github.com/do1tl/stromkosten_rechner/issues)
