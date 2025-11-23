@@ -1,76 +1,31 @@
 # Stromkosten Rechner
 
-Eine Home Assistant Custom Integration zur Berechnung von Stromkosten und Einsparungen durch Solar.
+Home Assistant Integration zur Berechnung von Stromkosten und Solar-Einsparungen.
 
-## Features
+## Installation via HACS
 
-✅ Addiert alle 3 Phasen des Shelly 3EM  
-✅ Unterstützt bis zu 4 Hoymiles Wechselrichter  
-✅ Berechnet tägliche Kosten vom Netz  
-✅ Berechnet Einsparungen durch Solar  
-✅ Automatische Reset um Mitternacht  
-✅ Konfigurierbar über UI
-
-## Installation
-
-### HACS (empfohlen)
-
-1. Öffne HACS
-2. Gehe zu "Integrationen"
-3. Klicke auf die drei Punkte oben rechts
-4. "Benutzerdefinierte Repositories"
-5. Füge die URL dieses Repos hinzu
-6. Kategorie: Integration
-7. Klicke "Hinzufügen"
-8. Suche nach "Stromkosten Rechner" und installiere es
-9. Starte Home Assistant neu
-
-### Manuell
-
-1. Lade das `custom_components/stromkosten_rechner` Verzeichnis herunter
-2. Kopiere es in dein Home Assistant `custom_components` Verzeichnis
-3. Starte Home Assistant neu
+1. Füge dieses Repository zu HACS hinzu als Custom Repository
+2. URL: `https://github.com/do1tl/stromkosten-rechner`
+3. Kategorie: Integration
+4. Installiere "Stromkosten Rechner"
+5. Starte Home Assistant neu
+6. Füge Integration hinzu: Einstellungen → Geräte & Dienste
 
 ## Konfiguration
 
-1. Gehe zu Einstellungen → Geräte & Dienste
-2. Klicke auf "Integration hinzufügen"
-3. Suche nach "Stromkosten Rechner"
-4. Gib folgende Daten ein:
-   - **Shelly 3EM Phase 1, 2, 3**: Die Entity-IDs deiner Shelly Phasen (z.B. `sensor.shelly_power_1`)
-   - **Hoymiles 1-4**: Die Entity-IDs deiner Hoymiles (täglicher Ertrag in kWh)
-   - **kWh Preis**: Dein Strompreis in EUR (z.B. 0.35)
+Benötigte Entity IDs:
+- **Shelly 3EM**: 3 Sensoren für die 3 Phasen (z.B. `sensor.shelly3em_channel_a_power`)
+- **Hoymiles**: 1-4 Sensoren für täglichen Ertrag (z.B. `sensor.hoymiles_daily_energy`)
+- **Strompreis**: Dein kWh-Preis in EUR (z.B. 0.35)
 
 ## Sensoren
 
-Die Integration erstellt folgende Sensoren:
-
-- `sensor.gesamtverbrauch` - Summe aller Shelly-Phasen (W)
-- `sensor.solarertrag_heute` - Summe aller Hoymiles (kWh)
-- `sensor.netzbezug_aktuell` - Strom vom Netz (W)
-- `sensor.stromkosten_heute` - Kosten heute (EUR)
-- `sensor.einsparungen_heute` - Einsparungen heute (EUR)
-
-## Beispiel Dashboard
-
-```yaml
-type: entities
-title: Stromkosten
-entities:
-  - entity: sensor.gesamtverbrauch
-    name: Gesamtverbrauch
-  - entity: sensor.solarertrag_heute
-    name: Solar Ertrag heute
-  - entity: sensor.stromkosten_heute
-    name: Kosten heute
-  - entity: sensor.einsparungen_heute
-    name: Ersparnis heute
-```
+- `sensor.stromkosten_gesamtverbrauch` - Summe aller Phasen (W)
+- `sensor.stromkosten_solarertrag` - Täglicher Solar-Ertrag (kWh)
+- `sensor.stromkosten_netzbezug` - Strom vom Netz (W)
+- `sensor.stromkosten_kosten_heute` - Kosten heute (EUR)
+- `sensor.stromkosten_einsparungen_heute` - Einsparungen (EUR)
 
 ## Support
 
-Bei Problemen oder Fragen bitte ein Issue auf GitHub erstellen.
-
-## Lizenz
-
-MIT License
+[GitHub Issues](https://github.com/do1tl/stromkosten-rechner/issues)

@@ -1,20 +1,11 @@
-"""Sensor platform für Stromkosten Rechner."""
-from __future__ import annotations
-from datetime import timedelta
+"""Sensor platform."""
+from datetime import timedelta, datetime
 import logging
-from typing import Any
 
-from homeassistant.components.sensor import (
-    SensorEntity,
-    SensorStateClass,
-    SensorDeviceClass,
-)
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import UnitOfEnergy, UnitOfPower
-from homeassistant.core import HomeAssistant, callback
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.core import callback
 from homeassistant.helpers.event import async_track_state_change_event
-from homeassistant.util import dt as dt_util
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -22,231 +13,227 @@ DOMAIN = "stromkosten_rechner"
 SCAN_INTERVAL = timedelta(seconds=30)
 
 
-async def async_setup_entry(
-    hass: HomeAssistant,
-    config_entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    """Set up the Stromkosten Rechner sensors."""
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    """Set up sensors."""
     config = config_entry.data
 
     sensors = [
-        StromkostenGesamtverbrauchSensor(hass, config, config_entry.entry_id),
-        StromkostenSolarertragSensor(hass, config, config_entry.entry_id),
-        StromkostenNetzbezugSensor(hass, config, config_entry.entry_id),
-        StromkostenKostenSensor(hass, config, config_entry.entry_id),
-        StromkostenEinsparungSensor(hass, config, config_entry.entry_id),
+        GesamtverbrauchSensor(hass, config, config_entry.entry_id),
+        SolarertragSensor(hass, config, config_entry.entry_id),
+        NetzbezugSensor(hass, config, config_entry.entry_id),
+        KostenSensor(hass, config, config_entry.entry_id),
+        EinsparungSensor(hass, config, config_entry.entry_id),
     ]
 
     async_add_entities(sensors, True)
 
 
-class StromkostenBaseSensor(SensorEntity):
-    """Base class for Stromkosten sensors."""
+class BaseSensor(SensorEntity):
+    """Base sensor."""
 
-    def __init__(self, hass: HomeAssistant, config: dict, entry_id: str) -> None:
-        """Initialize the sensor."""
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
         self.hass = hass
         self._config = config
         self._entry_id = entry_id
-        self._attr_should_poll = True
+        self._state = None
+        self._available = True
 
     @property
-    def device_info(self) -> dict[str, Any]:
-        """Return device information."""
-        return {
-            "identifiers": {(DOMAIN, self._entry_id)},
-            "name": "Stromkosten Rechner",
-            "manufacturer": "Custom",
-            "model": "Energy Cost Calculator",
-        }
+    def should_poll(self):
+        """Poll for updates."""
+        return True
+
+    @property
+    def available(self):
+        """Return availability."""
+        return self._available
+
+    @property
+    def state(self):
+        """Return state."""
+        return self._state
 
 
-class StromkostenGesamtverbrauchSensor(StromkostenBaseSensor):
-    """Sensor für Gesamtverbrauch aller Shelly-Phasen."""
+class GesamtverbrauchSensor(BaseSensor):
+    """Gesamtverbrauch sensor."""
 
-    def __init__(self, hass: HomeAssistant, config: dict, entry_id: str) -> None:
-        """Initialize the sensor."""
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
         super().__init__(hass, config, entry_id)
-        self._attr_name = "Gesamtverbrauch"
+        self._attr_name = "Stromkosten Gesamtverbrauch"
         self._attr_unique_id = f"{DOMAIN}_{entry_id}_gesamtverbrauch"
-        self._attr_device_class = SensorDeviceClass.POWER
-        self._attr_state_class = SensorStateClass.MEASUREMENT
-        self._attr_native_unit_of_measurement = UnitOfPower.WATT
-        self._attr_native_value = 0
+        self._attr_unit_of_measurement = UnitOfPower.WATT
+        self._attr_icon = "mdi:lightning-bolt"
 
-    async def async_added_to_hass(self) -> None:
-        """Register callbacks."""
+    async def async_added_to_hass(self):
+        """When added to hass."""
         entities = [
-            self._config["shelly_phase_1"],
-            self._config["shelly_phase_2"],
-            self._config["shelly_phase_3"],
+            self._config.get("shelly_phase_1"),
+            self._config.get("shelly_phase_2"),
+            self._config.get("shelly_phase_3"),
         ]
 
         @callback
-        def sensor_state_listener(event):
+        def state_changed(event):
             """Handle state changes."""
             self.async_schedule_update_ha_state(True)
 
-        async_track_state_change_event(self.hass, entities, sensor_state_listener)
+        async_track_state_change_event(self.hass, entities, state_changed)
 
-    async def async_update(self) -> None:
-        """Update the sensor."""
-        total = 0
+    async def async_update(self):
+        """Update sensor."""
+        total = 0.0
 
-        for phase in ["shelly_phase_1", "shelly_phase_2", "shelly_phase_3"]:
-            entity_id = self._config[phase]
+        for i in range(1, 4):
+            entity_id = self._config.get(f"shelly_phase_{i}")
+            if not entity_id:
+                continue
+
             state = self.hass.states.get(entity_id)
-
-            if state and state.state not in ["unknown", "unavailable", "None"]:
+            if state and state.state not in ["unknown", "unavailable"]:
                 try:
                     total += float(state.state)
-                except (ValueError, TypeError):
-                    _LOGGER.warning(
-                        "Could not convert value from %s: %s", entity_id, state.state
-                    )
+                except (ValueError, TypeError) as e:
+                    _LOGGER.warning(f"Cannot convert {entity_id}: {e}")
 
-        self._attr_native_value = round(total, 2)
+        self._state = round(total, 2)
 
 
-class StromkostenSolarertragSensor(StromkostenBaseSensor):
-    """Sensor für gesamten Solarertrag."""
+class SolarertragSensor(BaseSensor):
+    """Solarertrag sensor."""
 
-    def __init__(self, hass: HomeAssistant, config: dict, entry_id: str) -> None:
-        """Initialize the sensor."""
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
         super().__init__(hass, config, entry_id)
-        self._attr_name = "Solarertrag Heute"
+        self._attr_name = "Stromkosten Solarertrag"
         self._attr_unique_id = f"{DOMAIN}_{entry_id}_solarertrag"
-        self._attr_device_class = SensorDeviceClass.ENERGY
-        self._attr_state_class = SensorStateClass.TOTAL_INCREASING
-        self._attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
-        self._attr_native_value = 0
+        self._attr_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+        self._attr_icon = "mdi:solar-power"
 
-    async def async_added_to_hass(self) -> None:
-        """Register callbacks."""
+    async def async_added_to_hass(self):
+        """When added to hass."""
         entities = []
         for i in range(1, 5):
-            hoymiles = self._config.get(f"hoymiles_{i}")
-            if hoymiles:
-                entities.append(hoymiles)
+            entity_id = self._config.get(f"hoymiles_{i}")
+            if entity_id:
+                entities.append(entity_id)
 
         @callback
-        def sensor_state_listener(event):
+        def state_changed(event):
             """Handle state changes."""
             self.async_schedule_update_ha_state(True)
 
         if entities:
-            async_track_state_change_event(self.hass, entities, sensor_state_listener)
+            async_track_state_change_event(self.hass, entities, state_changed)
 
-    async def async_update(self) -> None:
-        """Update the sensor."""
-        total = 0
+    async def async_update(self):
+        """Update sensor."""
+        total = 0.0
 
         for i in range(1, 5):
-            hoymiles = self._config.get(f"hoymiles_{i}")
-            if hoymiles:
-                state = self.hass.states.get(hoymiles)
+            entity_id = self._config.get(f"hoymiles_{i}")
+            if not entity_id:
+                continue
 
-                if state and state.state not in ["unknown", "unavailable", "None"]:
-                    try:
-                        total += float(state.state)
-                    except (ValueError, TypeError):
-                        _LOGGER.warning(
-                            "Could not convert value from %s: %s", hoymiles, state.state
-                        )
+            state = self.hass.states.get(entity_id)
+            if state and state.state not in ["unknown", "unavailable"]:
+                try:
+                    total += float(state.state)
+                except (ValueError, TypeError) as e:
+                    _LOGGER.warning(f"Cannot convert {entity_id}: {e}")
 
-        self._attr_native_value = round(total, 3)
+        self._state = round(total, 3)
 
 
-class StromkostenNetzbezugSensor(StromkostenBaseSensor):
-    """Sensor für aktuellen Netzbezug."""
+class NetzbezugSensor(BaseSensor):
+    """Netzbezug sensor."""
 
-    def __init__(self, hass: HomeAssistant, config: dict, entry_id: str) -> None:
-        """Initialize the sensor."""
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
         super().__init__(hass, config, entry_id)
-        self._attr_name = "Netzbezug Aktuell"
+        self._attr_name = "Stromkosten Netzbezug"
         self._attr_unique_id = f"{DOMAIN}_{entry_id}_netzbezug"
-        self._attr_device_class = SensorDeviceClass.POWER
-        self._attr_state_class = SensorStateClass.MEASUREMENT
-        self._attr_native_unit_of_measurement = UnitOfPower.WATT
-        self._attr_native_value = 0
+        self._attr_unit_of_measurement = UnitOfPower.WATT
+        self._attr_icon = "mdi:transmission-tower"
 
-    async def async_update(self) -> None:
-        """Update the sensor."""
-        verbrauch_sensor = self.hass.states.get(
-            f"sensor.gesamtverbrauch"
-        )
+    async def async_update(self):
+        """Update sensor."""
+        verbrauch_entity = f"sensor.stromkosten_gesamtverbrauch"
+        state = self.hass.states.get(verbrauch_entity)
 
-        verbrauch = 0
-
-        if verbrauch_sensor and verbrauch_sensor.state not in [
-            "unknown",
-            "unavailable",
-            "None",
-        ]:
+        if state and state.state not in ["unknown", "unavailable"]:
             try:
-                verbrauch = float(verbrauch_sensor.state)
+                self._state = round(float(state.state), 2)
             except (ValueError, TypeError):
-                pass
+                self._state = 0.0
+        else:
+            self._state = 0.0
 
-        self._attr_native_value = round(max(0, verbrauch), 2)
 
+class KostenSensor(BaseSensor):
+    """Kosten sensor."""
 
-class StromkostenKostenSensor(StromkostenBaseSensor):
-    """Sensor für tägliche Stromkosten."""
-
-    def __init__(self, hass: HomeAssistant, config: dict, entry_id: str) -> None:
-        """Initialize the sensor."""
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
         super().__init__(hass, config, entry_id)
-        self._attr_name = "Stromkosten Heute"
+        self._attr_name = "Stromkosten Kosten Heute"
         self._attr_unique_id = f"{DOMAIN}_{entry_id}_kosten"
-        self._attr_native_unit_of_measurement = "EUR"
+        self._attr_unit_of_measurement = "EUR"
         self._attr_icon = "mdi:currency-eur"
-        self._daily_energy = 0
-        self._last_reset = dt_util.now().date()
-        self._attr_native_value = 0
+        self._daily_energy = 0.0
+        self._last_reset = datetime.now().date()
 
-    async def async_update(self) -> None:
-        """Update the sensor."""
-        now = dt_util.now().date()
+    async def async_update(self):
+        """Update sensor."""
+        # Reset bei neuem Tag
+        now = datetime.now().date()
         if now != self._last_reset:
-            self._daily_energy = 0
+            self._daily_energy = 0.0
             self._last_reset = now
 
-        netzbezug = self.hass.states.get(f"sensor.netzbezug_aktuell")
+        # Hole Netzbezug
+        netzbezug_entity = f"sensor.stromkosten_netzbezug"
+        state = self.hass.states.get(netzbezug_entity)
 
-        if netzbezug and netzbezug.state not in ["unknown", "unavailable", "None"]:
+        if state and state.state not in ["unknown", "unavailable"]:
             try:
-                power_w = float(netzbezug.state)
-                kwh = (power_w / 1000) * (30 / 3600)
-                self._daily_energy += kwh
+                power_w = float(state.state)
+                # Umrechnung zu kWh für 30 Sekunden
+                kwh_increment = (power_w / 1000.0) * (30.0 / 3600.0)
+                self._daily_energy += kwh_increment
 
-                kwh_preis = self._config.get("kwh_preis", 0.35)
-                self._attr_native_value = round(self._daily_energy * kwh_preis, 2)
-            except (ValueError, TypeError):
-                pass
+                kwh_preis = float(self._config.get("kwh_preis", 0.35))
+                self._state = round(self._daily_energy * kwh_preis, 2)
+            except (ValueError, TypeError) as e:
+                _LOGGER.warning(f"Error calculating costs: {e}")
+        else:
+            self._state = round(self._daily_energy * float(self._config.get("kwh_preis", 0.35)), 2)
 
 
-class StromkostenEinsparungSensor(StromkostenBaseSensor):
-    """Sensor für Einsparungen durch Solar."""
+class EinsparungSensor(BaseSensor):
+    """Einsparung sensor."""
 
-    def __init__(self, hass: HomeAssistant, config: dict, entry_id: str) -> None:
-        """Initialize the sensor."""
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
         super().__init__(hass, config, entry_id)
-        self._attr_name = "Einsparungen Heute"
+        self._attr_name = "Stromkosten Einsparungen Heute"
         self._attr_unique_id = f"{DOMAIN}_{entry_id}_einsparungen"
-        self._attr_native_unit_of_measurement = "EUR"
-        self._attr_icon = "mdi:cash-plus"
-        self._attr_native_value = 0
+        self._attr_unit_of_measurement = "EUR"
+        self._attr_icon = "mdi:piggy-bank"
 
-    async def async_update(self) -> None:
-        """Update the sensor."""
-        solar_sensor = self.hass.states.get(f"sensor.solarertrag_heute")
+    async def async_update(self):
+        """Update sensor."""
+        solar_entity = f"sensor.stromkosten_solarertrag"
+        state = self.hass.states.get(solar_entity)
 
-        if solar_sensor and solar_sensor.state not in ["unknown", "unavailable", "None"]:
+        if state and state.state not in ["unknown", "unavailable"]:
             try:
-                solar_kwh = float(solar_sensor.state)
-                kwh_preis = self._config.get("kwh_preis", 0.35)
-                self._attr_native_value = round(solar_kwh * kwh_preis, 2)
-            except (ValueError, TypeError):
-                pass
+                solar_kwh = float(state.state)
+                kwh_preis = float(self._config.get("kwh_preis", 0.35))
+                self._state = round(solar_kwh * kwh_preis, 2)
+            except (ValueError, TypeError) as e:
+                _LOGGER.warning(f"Error calculating savings: {e}")
+                self._state = 0.0
+        else:
+            self._state = 0.0
