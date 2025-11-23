@@ -32,9 +32,9 @@ class StromkostenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required("shelly_phase_2"): cv.entity_id,
             vol.Required("shelly_phase_3"): cv.entity_id,
             vol.Required("hoymiles_1"): cv.entity_id,
-            vol.Optional("hoymiles_2", default=""): cv.entity_id,
-            vol.Optional("hoymiles_3", default=""): cv.entity_id,
-            vol.Optional("hoymiles_4", default=""): cv.entity_id,
+            vol.Optional("hoymiles_2", default=""): str,
+            vol.Optional("hoymiles_3", default=""): str,
+            vol.Optional("hoymiles_4", default=""): str,
             vol.Required("kwh_preis", default=0.35): vol.Coerce(float),
         })
 
