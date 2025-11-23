@@ -43,8 +43,13 @@ class ResetYearlyDataButton(ButtonEntity):
         yearly_data["solar_produced"] = 0.0
         yearly_data["costs"] = 0.0
         yearly_data["savings"] = 0.0
+        yearly_data["manual_meter_adjustment"] = 0.0
         
-        _LOGGER.info("Yearly data has been reset manually")
+        # Save to storage
+        store = self.hass.data[DOMAIN][self._entry_id]["store"]
+        await store.async_save(yearly_data)
+        
+        _LOGGER.info("Yearly data has been reset manually and saved")
         
         # Force update of all sensors
         for entity_id in self.hass.states.async_entity_ids("sensor"):

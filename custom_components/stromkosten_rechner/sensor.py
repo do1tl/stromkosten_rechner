@@ -23,11 +23,29 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         NetzbezugSensor(hass, config, config_entry.entry_id),
         KostenSensor(hass, config, config_entry.entry_id),
         EinsparungSensor(hass, config, config_entry.entry_id),
+        GrundgebuehrSensor(hass, config, config_entry.entry_id),
+        # Phase 2: Einspeisevergütung & Autarkie
+        EigenverbrauchSensor(hass, config, config_entry.entry_id),
+        Autoarkie_Sensor(hass, config, config_entry.entry_id),
+        EinspeisungSensor(hass, config, config_entry.entry_id),
+        EinspeiseErloeSensor(hass, config, config_entry.entry_id),
+        # Phase 3: Spitzenlast & Prognosen
+        SpitzenlastTodaySensor(hass, config, config_entry.entry_id),
+        SpitzenlastWeekSensor(hass, config, config_entry.entry_id),
+        PrognoseJahreskosten(hass, config, config_entry.entry_id),
+        # Phase 4: Shelly-Verfügbarkeit & HT/NT
+        ShellyPhase1VerfuegbarkeitSensor(hass, config, config_entry.entry_id),
+        ShellyPhase2VerfuegbarkeitSensor(hass, config, config_entry.entry_id),
+        ShellyPhase3VerfuegbarkeitSensor(hass, config, config_entry.entry_id),
+        HTNTModusSensor(hass, config, config_entry.entry_id),
         # Jahres-Sensoren
         JahresVerbrauchSensor(hass, config, config_entry.entry_id),
         JahresSolarertragSensor(hass, config, config_entry.entry_id),
         JahresKostenSensor(hass, config, config_entry.entry_id),
         JahresEinsparungSensor(hass, config, config_entry.entry_id),
+        JahresKostenMitGrundgebuehrSensor(hass, config, config_entry.entry_id),
+        JahresEinspeisungSensor(hass, config, config_entry.entry_id),
+        JahresEinspeiseErloeSensor(hass, config, config_entry.entry_id),
         AktuellesAbrechnungsjahrSensor(hass, config, config_entry.entry_id),
     ]
 
@@ -273,6 +291,283 @@ class EinsparungSensor(BaseSensor):
             self._state = 0.0
 
 
+class GrundgebuehrSensor(BaseSensor):
+    """Grundgebühr sensor - monatliche Grundgebühr."""
+
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
+        super().__init__(hass, config, entry_id)
+        self._attr_name = "Stromkosten Grundgebühr Monatlich"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_grundgebuehr"
+        self._attr_unit_of_measurement = "EUR"
+        self._attr_icon = "mdi:file-invoice"
+
+    async def async_update(self):
+        """Update sensor."""
+        grundgebuehr = float(self._config.get("grundgebuehr", 0.0))
+        self._state = round(grundgebuehr, 2)
+
+
+# ==================== PHASE 2: EINSPEISEVERGÜTUNG & AUTARKIE ====================
+
+class EigenverbrauchSensor(BaseSensor):
+    """Eigenverbrauch - direkt genutzte Solarenergie."""
+
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
+        super().__init__(hass, config, entry_id)
+        self._attr_name = "Stromkosten Eigenverbrauch"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_eigenverbrauch"
+        self._attr_unit_of_measurement = "kWh"
+        self._attr_icon = "mdi:home-lightning-bolt"
+
+    async def async_update(self):
+        """Update sensor - Solar - Einspeisung."""
+        solar_entity = f"sensor.stromkosten_solarertrag"
+        solar_state = self.hass.states.get(solar_entity)
+        
+        yearly_data = self.get_yearly_data()
+        einspeisung = yearly_data.get("einspeisung_daily", 0.0)
+        
+        if solar_state and solar_state.state not in ["unknown", "unavailable"]:
+            try:
+                solar_kwh = float(solar_state.state)
+                eigenverbrauch = max(0.0, solar_kwh - einspeisung)
+                self._state = round(eigenverbrauch, 3)
+            except (ValueError, TypeError):
+                self._state = 0.0
+        else:
+            self._state = 0.0
+
+
+class Autoarkie_Sensor(BaseSensor):
+    """Autarkiegrad - % Eigenverbrauch vs Gesamtverbrauch."""
+
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
+        super().__init__(hass, config, entry_id)
+        self._attr_name = "Stromkosten Autarkiegrad"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_autarkie"
+        self._attr_unit_of_measurement = "%"
+        self._attr_icon = "mdi:percent"
+
+    async def async_update(self):
+        """Update sensor."""
+        solar_entity = f"sensor.stromkosten_solarertrag"
+        solar_state = self.hass.states.get(solar_entity)
+        
+        netzbezug_entity = f"sensor.stromkosten_netzbezug"
+        netzbezug_state = self.hass.states.get(netzbezug_entity)
+        
+        if solar_state and solar_state.state not in ["unknown", "unavailable"] and \
+           netzbezug_state and netzbezug_state.state not in ["unknown", "unavailable"]:
+            try:
+                solar_kwh = float(solar_state.state)
+                netzbezug_w = float(netzbezug_state.state)
+                netzbezug_kwh = (netzbezug_w / 1000.0) * (30.0 / 3600.0)
+                
+                total_verbrauch = netzbezug_kwh + solar_kwh
+                if total_verbrauch > 0:
+                    autarkie = (solar_kwh / total_verbrauch) * 100
+                    self._state = round(min(100.0, autarkie), 1)
+                else:
+                    self._state = 0.0
+            except (ValueError, TypeError):
+                self._state = 0.0
+        else:
+            self._state = 0.0
+
+
+class EinspeisungSensor(BaseSensor):
+    """Tägliche Einspeisung ins Netz."""
+
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
+        super().__init__(hass, config, entry_id)
+        self._attr_name = "Stromkosten Einspeisung Heute"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_einspeisung"
+        self._attr_unit_of_measurement = "kWh"
+        self._attr_icon = "mdi:transmission-tower-export"
+        self._daily_einspeisung = 0.0
+        self._last_reset = datetime.now().date()
+
+    async def async_update(self):
+        """Update sensor - wird berechnet als Solar - Eigennutzung."""
+        now = datetime.now().date()
+        if now != self._last_reset:
+            self._daily_einspeisung = 0.0
+            self._last_reset = now
+            
+        yearly_data = self.get_yearly_data()
+        
+        solar_entity = f"sensor.stromkosten_solarertrag"
+        solar_state = self.hass.states.get(solar_entity)
+        
+        if solar_state and solar_state.state not in ["unknown", "unavailable"]:
+            try:
+                solar_kwh = float(solar_state.state)
+                netzbezug_entity = f"sensor.stromkosten_netzbezug"
+                netzbezug_state = self.hass.states.get(netzbezug_entity)
+                
+                if netzbezug_state and netzbezug_state.state not in ["unknown", "unavailable"]:
+                    netzbezug_w = float(netzbezug_state.state)
+                    netzbezug_kwh = (netzbezug_w / 1000.0) * (30.0 / 3600.0)
+                    einspeisung = max(0.0, solar_kwh - netzbezug_kwh)
+                    self._daily_einspeisung = einspeisung
+                    yearly_data["einspeisung_daily"] = einspeisung
+                    self._state = round(einspeisung, 3)
+            except (ValueError, TypeError):
+                self._state = 0.0
+        else:
+            self._state = 0.0
+
+
+class EinspeiseErloeSensor(BaseSensor):
+    """Erlös aus Stromeinspeisung heute."""
+
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
+        super().__init__(hass, config, entry_id)
+        self._attr_name = "Stromkosten Einspeise-Erlös Heute"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_einspeise_erloes"
+        self._attr_unit_of_measurement = "EUR"
+        self._attr_icon = "mdi:cash-plus"
+
+    async def async_update(self):
+        """Update sensor."""
+        einspeisung_entity = f"sensor.stromkosten_einspeisung_heute"
+        einspeisung_state = self.hass.states.get(einspeisung_entity)
+        
+        einspeiseverguetung = float(self._config.get("einspeiseverguetung", 0.0))
+        
+        if einspeisung_state and einspeisung_state.state not in ["unknown", "unavailable"]:
+            try:
+                einspeisung_kwh = float(einspeisung_state.state)
+                erloes = einspeisung_kwh * einspeiseverguetung
+                self._state = round(erloes, 2)
+            except (ValueError, TypeError):
+                self._state = 0.0
+        else:
+            self._state = 0.0
+
+
+# ==================== PHASE 3: SPITZENLAST & PROGNOSEN ====================
+
+class SpitzenlastTodaySensor(BaseSensor):
+    """Höchster Verbrauch heute."""
+
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
+        super().__init__(hass, config, entry_id)
+        self._attr_name = "Stromkosten Spitzenlast Heute"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_spitzenlast_today"
+        self._attr_unit_of_measurement = UnitOfPower.WATT
+        self._attr_icon = "mdi:flash"
+        self._max_today = 0.0
+        self._last_reset = datetime.now().date()
+
+    async def async_update(self):
+        """Update sensor."""
+        now = datetime.now().date()
+        if now != self._last_reset:
+            self._max_today = 0.0
+            self._last_reset = now
+            
+        verbrauch_entity = f"sensor.stromkosten_gesamtverbrauch"
+        verbrauch_state = self.hass.states.get(verbrauch_entity)
+        
+        if verbrauch_state and verbrauch_state.state not in ["unknown", "unavailable"]:
+            try:
+                current_verbrauch = float(verbrauch_state.state)
+                if current_verbrauch > self._max_today:
+                    self._max_today = current_verbrauch
+                self._state = round(self._max_today, 0)
+            except (ValueError, TypeError):
+                pass
+
+
+class SpitzenlastWeekSensor(BaseSensor):
+    """Höchster Verbrauch diese Woche."""
+
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
+        super().__init__(hass, config, entry_id)
+        self._attr_name = "Stromkosten Spitzenlast Woche"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_spitzenlast_week"
+        self._attr_unit_of_measurement = UnitOfPower.WATT
+        self._attr_icon = "mdi:flash-alert"
+        self._max_week = 0.0
+        self._week_number = 0
+
+    async def async_update(self):
+        """Update sensor."""
+        now = datetime.now()
+        current_week = now.isocalendar()[1]
+        
+        if current_week != self._week_number:
+            self._max_week = 0.0
+            self._week_number = current_week
+            
+        verbrauch_entity = f"sensor.stromkosten_gesamtverbrauch"
+        verbrauch_state = self.hass.states.get(verbrauch_entity)
+        
+        if verbrauch_state and verbrauch_state.state not in ["unknown", "unavailable"]:
+            try:
+                current_verbrauch = float(verbrauch_state.state)
+                if current_verbrauch > self._max_week:
+                    self._max_week = current_verbrauch
+                self._state = round(self._max_week, 0)
+            except (ValueError, TypeError):
+                pass
+
+
+class PrognoseJahreskosten(BaseSensor):
+    """Hochrechnung Jahreskosten basierend auf aktuellem Verbrauch."""
+
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
+        super().__init__(hass, config, entry_id)
+        self._attr_name = "Stromkosten Prognose Jahreskosten"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_prognose_jahreskosten"
+        self._attr_unit_of_measurement = "EUR"
+        self._attr_icon = "mdi:chart-line"
+
+    async def async_update(self):
+        """Update sensor."""
+        yearly_data = self.get_yearly_data()
+        
+        # Tage seit Ablesetermin
+        config = self._config
+        day = config.get("ablesetermin_tag", 1)
+        month = config.get("ablesetermin_monat", 1)
+        
+        now = datetime.now()
+        try:
+            billing_start = datetime(now.year, month, day)
+        except ValueError:
+            billing_start = datetime(now.year, month, 28)
+        
+        if now < billing_start:
+            try:
+                billing_start = datetime(now.year - 1, month, day)
+            except ValueError:
+                billing_start = datetime(now.year - 1, month, 28)
+        
+        days_passed = (now - billing_start).days + 1
+        current_costs = yearly_data.get("costs", 0.0)
+        grundgebuehr = float(config.get("grundgebuehr", 0.0))
+        months_passed = max(1, days_passed // 30)
+        
+        total_current = current_costs + (grundgebuehr * months_passed)
+        
+        if days_passed > 0:
+            daily_average = total_current / days_passed
+            prognose = daily_average * 365
+            self._state = round(prognose, 2)
+        else:
+            self._state = 0.0
+
+
 # ==================== JAHRES-SENSOREN ====================
 
 class JahresVerbrauchSensor(BaseSensor):
@@ -391,6 +686,88 @@ class JahresEinsparungSensor(BaseSensor):
         self._state = round(savings, 2)
 
 
+class JahresKostenMitGrundgebuehrSensor(BaseSensor):
+    """Jahreskosten inklusive Grundgebühr."""
+
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
+        super().__init__(hass, config, entry_id)
+        self._attr_name = "Stromkosten Jahreskosten mit Grundgebühr"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_jahreskosten_mit_grundgebuehr"
+        self._attr_unit_of_measurement = "EUR"
+        self._attr_icon = "mdi:cash"
+
+    async def async_update(self):
+        """Update sensor."""
+        yearly_data = self.get_yearly_data()
+        grundgebuehr = float(self._config.get("grundgebuehr", 0.0))
+        
+        # Get months since billing start
+        from datetime import datetime
+        config = self._config
+        day = config.get("ablesetermin_tag", 1)
+        month = config.get("ablesetermin_monat", 1)
+        
+        now = datetime.now()
+        billing_start = datetime(now.year, month, day) if month != 2 or day <= 28 else datetime(now.year, month, 28)
+        
+        if now < billing_start:
+            billing_start = datetime(now.year - 1, month, day) if month != 2 or day <= 28 else datetime(now.year - 1, month, 28)
+        
+        # Calculate months (approximation)
+        months = max(1, (now - billing_start).days // 30 + 1)
+        
+        total_kosten = yearly_data.get("costs", 0.0) + (grundgebuehr * months)
+        self._state = round(total_kosten, 2)
+
+
+class JahresEinspeisungSensor(BaseSensor):
+    """Jahres-Einspeisung sensor."""
+
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
+        super().__init__(hass, config, entry_id)
+        self._attr_name = "Stromkosten Jahres-Einspeisung"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_jahres_einspeisung"
+        self._attr_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+        self._attr_icon = "mdi:transmission-tower-export"
+
+    async def async_update(self):
+        """Update sensor."""
+        yearly_data = self.get_yearly_data()
+        
+        # Track daily einspeisung
+        einspeisung_today = yearly_data.get("einspeisung_daily", 0.0)
+        yearly_einspeisung = yearly_data.get("einspeisung_yearly", 0.0)
+        
+        if einspeisung_today > 0:
+            yearly_data["einspeisung_yearly"] = yearly_einspeisung + einspeisung_today
+        
+        self._state = round(yearly_data.get("einspeisung_yearly", 0.0), 2)
+
+
+class JahresEinspeiseErloeSensor(BaseSensor):
+    """Jahres-Einspeise-Erlös sensor."""
+
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
+        super().__init__(hass, config, entry_id)
+        self._attr_name = "Stromkosten Jahres-Einspeise-Erlös"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_jahres_einspeise_erloes"
+        self._attr_unit_of_measurement = "EUR"
+        self._attr_icon = "mdi:cash-multiple"
+
+    async def async_update(self):
+        """Update sensor."""
+        yearly_data = self.get_yearly_data()
+        einspeiseverguetung = float(self._config.get("einspeiseverguetung", 0.0))
+        
+        jahres_einspeisung = yearly_data.get("einspeisung_yearly", 0.0)
+        erloes = jahres_einspeisung * einspeiseverguetung
+        
+        self._state = round(erloes, 2)
+
+
 class AktuellesAbrechnungsjahrSensor(BaseSensor):
     """Current billing year sensor."""
 
@@ -414,3 +791,109 @@ class AktuellesAbrechnungsjahrSensor(BaseSensor):
             "start_jahr": current_year,
             "ende_jahr": current_year + 1,
         }
+
+
+class ShellyPhase1VerfuegbarkeitSensor(BaseSensor):
+    """Shelly Phase 1 Verfügbarkeit sensor."""
+
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
+        super().__init__(hass, config, entry_id)
+        self._attr_name = "Stromkosten Shelly Phase 1 Verfügbarkeit"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_shelly_p1_verfuegbarkeit"
+        self._attr_icon = "mdi:check-circle"
+
+    async def async_update(self):
+        """Update sensor."""
+        entity_id = self._config.get("shelly_phase_1")
+        if not entity_id:
+            self._state = "nicht konfiguriert"
+            return
+        
+        state = self.hass.states.get(entity_id)
+        if state is None or state.state in ["unknown", "unavailable"]:
+            self._state = "nicht erreichbar"
+        else:
+            self._state = "erreichbar"
+
+
+class ShellyPhase2VerfuegbarkeitSensor(BaseSensor):
+    """Shelly Phase 2 Verfügbarkeit sensor."""
+
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
+        super().__init__(hass, config, entry_id)
+        self._attr_name = "Stromkosten Shelly Phase 2 Verfügbarkeit"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_shelly_p2_verfuegbarkeit"
+        self._attr_icon = "mdi:check-circle"
+
+    async def async_update(self):
+        """Update sensor."""
+        entity_id = self._config.get("shelly_phase_2")
+        if not entity_id:
+            self._state = "nicht konfiguriert"
+            return
+        
+        state = self.hass.states.get(entity_id)
+        if state is None or state.state in ["unknown", "unavailable"]:
+            self._state = "nicht erreichbar"
+        else:
+            self._state = "erreichbar"
+
+
+class ShellyPhase3VerfuegbarkeitSensor(BaseSensor):
+    """Shelly Phase 3 Verfügbarkeit sensor."""
+
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
+        super().__init__(hass, config, entry_id)
+        self._attr_name = "Stromkosten Shelly Phase 3 Verfügbarkeit"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_shelly_p3_verfuegbarkeit"
+        self._attr_icon = "mdi:check-circle"
+
+    async def async_update(self):
+        """Update sensor."""
+        entity_id = self._config.get("shelly_phase_3")
+        if not entity_id:
+            self._state = "nicht konfiguriert"
+            return
+        
+        state = self.hass.states.get(entity_id)
+        if state is None or state.state in ["unknown", "unavailable"]:
+            self._state = "nicht erreichbar"
+        else:
+            self._state = "erreichbar"
+
+
+class HTNTModusSensor(BaseSensor):
+    """HT/NT Modus sensor."""
+
+    def __init__(self, hass, config, entry_id):
+        """Initialize."""
+        super().__init__(hass, config, entry_id)
+        self._attr_name = "Stromkosten HT/NT Modus"
+        self._attr_unique_id = f"{DOMAIN}_{entry_id}_ht_nt_modus"
+        self._attr_icon = "mdi:clock"
+
+    async def async_update(self):
+        """Update sensor."""
+        ht_nt_enabled = self._config.get("ht_nt_enabled", False)
+        if not ht_nt_enabled:
+            self._state = "deaktiviert"
+            return
+        
+        from datetime import datetime
+        now = datetime.now()
+        ht_start_str = self._config.get("ht_start", "06:00")
+        ht_end_str = self._config.get("ht_end", "22:00")
+        
+        try:
+            ht_start = datetime.strptime(ht_start_str, "%H:%M").time()
+            ht_end = datetime.strptime(ht_end_str, "%H:%M").time()
+            
+            if ht_start <= now.time() < ht_end:
+                self._state = "Hochtarif (HT)"
+            else:
+                self._state = "Niedrigtarif (NT)"
+        except ValueError:
+            self._state = "ungültiges Zeitformat"

@@ -2,8 +2,8 @@
   "config": {
     "step": {
       "user": {
-        "title": "Stromkosten Rechner",
-        "description": "Konfiguriere deine Stromkosten-Berechnung",
+        "title": "Stromkosten Rechner - Schritt 1: Sensoren",
+        "description": "Konfiguriere die Sensoren für deine Messwerte",
         "data": {
           "shelly_phase_1": "Shelly 3EM Phase 1 Entity ID",
           "shelly_phase_2": "Shelly 3EM Phase 2 Entity ID",
@@ -11,10 +11,35 @@
           "hoymiles_1": "Hoymiles 1 Entity ID (täglich)",
           "hoymiles_2": "Hoymiles 2 (optional)",
           "hoymiles_3": "Hoymiles 3 (optional)",
-          "hoymiles_4": "Hoymiles 4 (optional)",
+          "hoymiles_4": "Hoymiles 4 (optional)"
+        }
+      },
+      "pricing": {
+        "title": "Stromkosten Rechner - Schritt 2: Preiseinstellungen",
+        "description": "Gib deinen Strompreis, Grundgebühr und Einspeisevergütung ein",
+        "data": {
           "kwh_preis": "Strompreis (EUR/kWh)",
+          "grundgebuehr": "Grundgebühr (EUR/Monat)",
+          "einspeiseverguetung": "Einspeisevergütung (EUR/kWh)"
+        }
+      },
+      "billing": {
+        "title": "Stromkosten Rechner - Schritt 3: Abrechnungstermin",
+        "description": "Wann werden deine Stromkosten abgelesen?",
+        "data": {
           "ablesetermin_tag": "Ablesetermin Tag (1-31)",
           "ablesetermin_monat": "Ablesetermin Monat (1-12)"
+        }
+      },
+      "tariff": {
+        "title": "Stromkosten Rechner - Schritt 4: HT/NT Tarif",
+        "description": "Konfiguriere Hochtarif und Niedrigtarif (optional)",
+        "data": {
+          "ht_nt_enabled": "HT/NT Tarif aktivieren",
+          "ht_preis": "Hochtarif Preis (EUR/kWh)",
+          "nt_preis": "Niedrigtarif Preis (EUR/kWh)",
+          "ht_start": "Hochtarif Start (HH:MM)",
+          "ht_end": "Hochtarif Ende (HH:MM)"
         }
       }
     },
@@ -26,8 +51,16 @@
   "options": {
     "step": {
       "init": {
+        "title": "Stromkosten Rechner - Optionen",
         "data": {
-          "kwh_preis": "Strompreis (EUR/kWh)"
+          "kwh_preis": "Strompreis (EUR/kWh)",
+          "grundgebuehr": "Grundgebühr (EUR/Monat)",
+          "einspeiseverguetung": "Einspeisevergütung (EUR/kWh)",
+          "ht_nt_enabled": "HT/NT Tarif aktivieren",
+          "ht_preis": "Hochtarif Preis (EUR/kWh)",
+          "nt_preis": "Niedrigtarif Preis (EUR/kWh)",
+          "ht_start": "Hochtarif Start (HH:MM)",
+          "ht_end": "Hochtarif Ende (HH:MM)"
         }
       }
     }
