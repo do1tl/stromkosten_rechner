@@ -69,6 +69,12 @@ class StromkostenConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required("kwh_preis", default=0.35): vol.All(
                 vol.Coerce(float), vol.Range(min=0.01, max=10.0)
             ),
+            vol.Required("ablesetermin_tag", default=1): vol.All(
+                vol.Coerce(int), vol.Range(min=1, max=31)
+            ),
+            vol.Required("ablesetermin_monat", default=1): vol.All(
+                vol.Coerce(int), vol.Range(min=1, max=12)
+            ),
         })
 
         return self.async_show_form(

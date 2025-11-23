@@ -12,7 +12,9 @@
           "hoymiles_2": "Hoymiles 2 (optional)",
           "hoymiles_3": "Hoymiles 3 (optional)",
           "hoymiles_4": "Hoymiles 4 (optional)",
-          "kwh_preis": "Strompreis (EUR/kWh)"
+          "kwh_preis": "Strompreis (EUR/kWh)",
+          "ablesetermin_tag": "Ablesetermin Tag (1-31)",
+          "ablesetermin_monat": "Ablesetermin Monat (1-12)"
         }
       }
     },
