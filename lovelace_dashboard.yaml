@@ -3,108 +3,134 @@
 
 title: Stromkosten
 icon: mdi:lightning-bolt-circle
-cards:
-  - type: vertical-stack
+views:
+  - title: Tages-Übersicht
+    path: stromkosten-today
     cards:
-      - type: heading
-        heading: Aktuelle Situation
-        heading_tag: h2
-
-      - type: grid
-        columns: 3
+      - type: vertical-stack
         cards:
-          - type: entities
-            entities:
-              - entity: sensor.stromkosten_gesamtverbrauch
-                name: Aktueller Verbrauch
-              - entity: sensor.stromkosten_kosten_heute
-                name: Kosten Heute
-              - entity: sensor.stromkosten_einsparungen_heute
-                name: Ersparnis Heute
+          - type: heading
+            heading: Aktuelle Tages-Werte
+            heading_tag: h2
+
+          - type: grid
+            columns: 3
+            cards:
+              - type: entities
+                title: Verbrauch
+                entities:
+                  - entity: sensor.stromkosten_gesamtverbrauch
+                  - entity: sensor.stromkosten_netzbezug
+
+              - type: entities
+                title: Erzeugung & Einspeisung
+                entities:
+                  - entity: sensor.stromkosten_solarertrag
+                  - entity: sensor.stromkosten_einspeisung
+
+              - type: entities
+                title: Kosten & Ersparnisse
+                entities:
+                  - entity: sensor.stromkosten_kosten
+                  - entity: sensor.stromkosten_einsparungen
+                  - entity: sensor.stromkosten_einspeise_erloes
+
+      - type: vertical-stack
+        cards:
+          - type: heading
+            heading: Analyse Heute
+            heading_tag: h2
+
+          - type: grid
+            columns: 3
+            cards:
+              - type: entities
+                title: Eigenverbrauch
+                entities:
+                  - entity: sensor.stromkosten_eigenverbrauch
+                  - entity: sensor.stromkosten_autarkie
+
+              - type: entities
+                title: Spitzenlast
+                entities:
+                  - entity: sensor.stromkosten_spitzenlast_today
+                  - entity: sensor.stromkosten_spitzenlast_week
+
+              - type: entities
+                title: Grundgebühr
+                entities:
+                  - entity: sensor.stromkosten_grundgebuehr
+
+  - title: Jahres-Übersicht
+    path: stromkosten-yearly
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: heading
+            heading: Jahres-Statistiken
+            heading_tag: h2
+
+          - type: grid
+            columns: 2
+            cards:
+              - type: entities
+                title: Verbrauch & Kosten
+                entities:
+                  - entity: sensor.stromkosten_abrechnungsjahr
+                  - entity: sensor.stromkosten_jahresverbrauch
+                  - entity: sensor.stromkosten_jahreskosten
+                  - entity: sensor.stromkosten_jahreskosten_mit_grundgebuehr
+
+              - type: entities
+                title: Solar & Einspeisevergütung
+                entities:
+                  - entity: sensor.stromkosten_jahres_solarertrag
+                  - entity: sensor.stromkosten_jahres_einspeisung
+                  - entity: sensor.stromkosten_jahres_einsparungen
+                  - entity: sensor.stromkosten_jahres_einspeise_erloes
+
+      - type: vertical-stack
+        cards:
+          - type: heading
+            heading: Prognose
+            heading_tag: h2
 
           - type: entities
             entities:
-              - entity: sensor.stromkosten_einspeisung_heute
-                name: Einspeisung Heute
-              - entity: sensor.stromkosten_einspeise_erloes_heute
-                name: Erlös Heute
-              - entity: sensor.stromkosten_ht_nt_modus
-                name: Aktueller Tarif
+              - entity: sensor.stromkosten_prognose_jahreskosten
+
+  - title: Überwachung
+    path: stromkosten-monitoring
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: heading
+            heading: Shelly 3EM Verfügbarkeit
+            heading_tag: h2
 
           - type: entities
             entities:
               - entity: sensor.stromkosten_shelly_p1_verfuegbarkeit
-                name: Shelly Phase 1
               - entity: sensor.stromkosten_shelly_p2_verfuegbarkeit
-                name: Shelly Phase 2
               - entity: sensor.stromkosten_shelly_p3_verfuegbarkeit
-                name: Shelly Phase 3
 
-  - type: vertical-stack
-    cards:
-      - type: heading
-        heading: Jahresübersicht
-        heading_tag: h2
-
-      - type: grid
-        columns: 2
+      - type: vertical-stack
         cards:
-          - type: entities
-            title: Verbrauch & Kosten
-            entities:
-              - entity: sensor.stromkosten_abrechnungsjahr
-                name: Abrechnungsjahr
-              - entity: sensor.stromkosten_jahresverbrauch
-                name: Jahresverbrauch
-              - entity: sensor.stromkosten_jahreskosten
-                name: Jahreskosten
-              - entity: sensor.stromkosten_jahreskosten_mit_grundgebuehr
-                name: Mit Grundgebühr
+          - type: heading
+            heading: Tarif-Einstellungen
+            heading_tag: h2
 
           - type: entities
-            title: Solar & Einspeisevergütung
             entities:
-              - entity: sensor.stromkosten_jahres_solarertrag
-                name: Jahres Solar-Ertrag
-              - entity: sensor.stromkosten_jahres_einspeisung
-                name: Jahres-Einspeisung
-              - entity: sensor.stromkosten_jahres_einsparungen
-                name: Jahres-Einsparungen
-              - entity: sensor.stromkosten_jahres_einspeise_erloes
-                name: Jahres-Erlös
+              - entity: sensor.stromkosten_ht_nt_modus
 
-  - type: vertical-stack
-    cards:
-      - type: heading
-        heading: Peak Loading & Prognose
-        heading_tag: h2
-
-      - type: grid
-        columns: 2
+      - type: vertical-stack
         cards:
-          - type: entities
-            title: Spitzenlast
-            entities:
-              - entity: sensor.stromkosten_spitzenlast_heute
-                name: Spitzenlast Heute
-              - entity: sensor.stromkosten_spitzenlast_woche
-                name: Spitzenlast Woche
+          - type: heading
+            heading: Wartung
+            heading_tag: h2
 
           - type: entities
-            title: Prognose
             entities:
-              - entity: sensor.stromkosten_prognose_jahreskosten
-                name: Prognostizierte Jahreskosten
-
-  - type: vertical-stack
-    cards:
-      - type: heading
-        heading: Einstellungen
-        heading_tag: h2
-
-      - type: entities
-        entities:
-          - entity: button.stromkosten_jahreszahler_zurucksetzen
-            name: Jahreszähler Zurücksetzen
-          - entity: number.stromkosten_manueller_zaehlerstand_anpassung
-            name: Manuelle Zählerstand Anpassung
+              - entity: button.stromkosten_jahreszahler_zurucksetzen
+              - entity: number.stromkosten_manueller_zaehlerstand_anpassung
