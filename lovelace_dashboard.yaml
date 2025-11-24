@@ -19,21 +19,21 @@ views:
               - type: entities
                 title: Verbrauch
                 entities:
-                  - entity: sensor.stromkosten_gesamtverbrauch
-                  - entity: sensor.stromkosten_netzbezug
+                  - entity: sensor.gesamtverbrauch
+                  - entity: sensor.netzbezug
 
               - type: entities
                 title: Erzeugung & Einspeisung
                 entities:
-                  - entity: sensor.stromkosten_solarertrag
-                  - entity: sensor.stromkosten_einspeisung
+                  - entity: sensor.solarertrag
+                  - entity: sensor.einspeisung_heute
 
               - type: entities
                 title: Kosten & Ersparnisse
                 entities:
-                  - entity: sensor.stromkosten_kosten
-                  - entity: sensor.stromkosten_einsparungen
-                  - entity: sensor.stromkosten_einspeise_erloes
+                  - entity: sensor.kosten_heute
+                  - entity: sensor.einsparungen_heute
+                  - entity: sensor.einspeise_erloes_heute
 
       - type: vertical-stack
         cards:
@@ -47,19 +47,19 @@ views:
               - type: entities
                 title: Eigenverbrauch
                 entities:
-                  - entity: sensor.stromkosten_eigenverbrauch
-                  - entity: sensor.stromkosten_autarkie
+                  - entity: sensor.eigenverbrauch
+                  - entity: sensor.autarkiegrad
 
               - type: entities
                 title: Spitzenlast
                 entities:
-                  - entity: sensor.stromkosten_spitzenlast_today
-                  - entity: sensor.stromkosten_spitzenlast_week
+                  - entity: sensor.spitzenlast_heute
+                  - entity: sensor.spitzenlast_woche
 
               - type: entities
                 title: Grundgebühr
                 entities:
-                  - entity: sensor.stromkosten_grundgebuehr
+                  - entity: sensor.grundgebuehr_monatlich
 
   - title: Jahres-Übersicht
     path: stromkosten-yearly
@@ -76,18 +76,18 @@ views:
               - type: entities
                 title: Verbrauch & Kosten
                 entities:
-                  - entity: sensor.stromkosten_abrechnungsjahr
-                  - entity: sensor.stromkosten_jahresverbrauch
-                  - entity: sensor.stromkosten_jahreskosten
-                  - entity: sensor.stromkosten_jahreskosten_mit_grundgebuehr
+                  - entity: sensor.abrechnungsjahr
+                  - entity: sensor.jahresverbrauch
+                  - entity: sensor.jahreskosten
+                  - entity: sensor.jahreskosten_mit_grundgebuehr
 
               - type: entities
                 title: Solar & Einspeisevergütung
                 entities:
-                  - entity: sensor.stromkosten_jahres_solarertrag
-                  - entity: sensor.stromkosten_jahres_einspeisung
-                  - entity: sensor.stromkosten_jahres_einsparungen
-                  - entity: sensor.stromkosten_jahres_einspeise_erloes
+                  - entity: sensor.jahres_solarertrag
+                  - entity: sensor.jahres_einspeisung
+                  - entity: sensor.jahres_einsparungen
+                  - entity: sensor.jahres_einspeise_erloes
 
       - type: vertical-stack
         cards:
@@ -97,7 +97,7 @@ views:
 
           - type: entities
             entities:
-              - entity: sensor.stromkosten_prognose_jahreskosten
+              - entity: sensor.prognose_jahreskosten
 
   - title: Überwachung
     path: stromkosten-monitoring
@@ -110,9 +110,9 @@ views:
 
           - type: entities
             entities:
-              - entity: sensor.stromkosten_shelly_p1_verfuegbarkeit
-              - entity: sensor.stromkosten_shelly_p2_verfuegbarkeit
-              - entity: sensor.stromkosten_shelly_p3_verfuegbarkeit
+              - entity: sensor.shelly_phase_1_verfuegbarkeit
+              - entity: sensor.shelly_phase_2_verfuegbarkeit
+              - entity: sensor.shelly_phase_3_verfuegbarkeit
 
       - type: vertical-stack
         cards:
@@ -122,7 +122,7 @@ views:
 
           - type: entities
             entities:
-              - entity: sensor.stromkosten_ht_nt_modus
+              - entity: sensor.ht_nt_modus
 
       - type: vertical-stack
         cards:
@@ -132,5 +132,5 @@ views:
 
           - type: entities
             entities:
-              - entity: button.stromkosten_jahreszahler_zurucksetzen
-              - entity: number.stromkosten_manueller_zaehlerstand_anpassung
+              - entity: button.jahreszahler_zurucksetzen
+              - entity: number.manueller_zaehlerstand_anpassung

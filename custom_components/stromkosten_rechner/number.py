@@ -30,8 +30,8 @@ class ManuellerZaehlerstandNumber(NumberEntity):
         """Initialize the number."""
         self.hass = hass
         self._entry_id = entry_id
-        self._attr_name = "Stromkosten Manueller Zählerstand Anpassung"
-        self._attr_unique_id = f"{DOMAIN}_{entry_id}_manual_meter"
+        self._attr_name = "Manueller Zählerstand Anpassung"
+        self._attr_unique_id = f"{entry_id}_manual_meter"
         self._attr_icon = "mdi:counter"
         self._attr_native_min_value = 0.0
         self._attr_native_max_value = 999999.9

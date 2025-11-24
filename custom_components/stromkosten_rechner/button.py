@@ -30,8 +30,8 @@ class ResetYearlyDataButton(ButtonEntity):
         """Initialize the button."""
         self.hass = hass
         self._entry_id = entry_id
-        self._attr_name = "Stromkosten Jahreszähler Zurücksetzen"
-        self._attr_unique_id = f"{DOMAIN}_{entry_id}_reset_yearly"
+        self._attr_name = "Jahreszähler Zurücksetzen"
+        self._attr_unique_id = f"{entry_id}_reset_yearly"
         self._attr_icon = "mdi:refresh"
 
     async def async_press(self) -> None:
@@ -51,9 +51,9 @@ class ResetYearlyDataButton(ButtonEntity):
         
         _LOGGER.info("Yearly data has been reset manually and saved")
         
-        # Force update of all sensors
+        # Force update of all sensors by triggering a home assistant update
         for entity_id in self.hass.states.async_entity_ids("sensor"):
-            if "stromkosten" in entity_id:
+            if self._entry_id in entity_id:
                 state = self.hass.states.get(entity_id)
                 if state:
                     self.hass.async_create_task(
