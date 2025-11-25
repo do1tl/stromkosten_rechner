@@ -35,7 +35,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
     
-    _copy_card_to_www(hass)
+    await _copy_card_to_www_async(hass)
 
     return True
 
@@ -56,7 +56,7 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await async_setup_entry(hass, entry)
 
 
-def _copy_card_to_www(hass: HomeAssistant) -> None:
+async def _copy_card_to_www_async(hass: HomeAssistant) -> None:
     """Copy card file to www directory."""
     try:
         card_src = Path(__file__).parent / "www" / "stromkosten-rechner-card.js"
