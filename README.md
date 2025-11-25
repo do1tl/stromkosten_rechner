@@ -1,7 +1,8 @@
-# Strom Zähler Integration für Home Assistant
+# Stromkosten Rechner Integration für Home Assistant
 
 Diese Custom Integration für Home Assistant bietet eine Stromzähler-ähnliche Anzeige mit:
 - **Täglichem, monatlichem und jährlichem Stromverbrauch** (Shelly 3EM)
+- **Prognosen & Kostenberechnung** (mit benutzerdefinierbarem Stromtarif)
 - **Solarertrag** (Hoymilies)
 - **Custom Lovelace Karte** mit modernem Design
 
@@ -17,14 +18,14 @@ Diese Custom Integration für Home Assistant bietet eine Stromzähler-ähnliche 
 4. Kopiere `manifest.json` und `strings.json` auch dort hin
 5. Starte Home Assistant neu
 
-**Option B: HACS (nach Veröffentlichung)**
+**Option B: HACS**
 
-Noch nicht in HACS verfügbar - wird später hinzugefügt
+Nach Veröffentlichung im HACS Repository verfügbar
 
 ### 2. Integration konfigurieren
 
 1. Gehe zu **Settings** → **Devices & Services** → **Integrations**
-2. Klicke auf **Create Integration** und suche nach **Strom Zähler**
+2. Klicke auf **Create Integration** und suche nach **Stromkosten Rechner**
 3. Fülle folgende Felder aus:
 
    | Feld | Beispiel |
@@ -73,6 +74,13 @@ Die Integration erstellt automatisch folgende Sensoren:
 - `sensor.stromkosten_consumption_daily` - Tagesverbrauch (kWh)
 - `sensor.stromkosten_consumption_monthly` - Monatsverbrauch (kWh)
 - `sensor.stromkosten_consumption_yearly` - Jahresverbrauch (kWh)
+- `sensor.stromkosten_consumption_yearly_prognosis` - Jahresprognose (kWh)
+
+### Stromkosten
+- `sensor.stromkosten_cost_daily` - Tageskosten (€)
+- `sensor.stromkosten_cost_monthly` - Monatskosten (€)
+- `sensor.stromkosten_cost_yearly` - Jahreskosten (€)
+- `sensor.stromkosten_cost_yearly_prognosis` - Jahresprognose Kosten (€)
 
 ### Solarertrag
 - `sensor.solar_yield_daily` - Tagesertrag (kWh)
@@ -98,12 +106,12 @@ Der Hoymilies benötigt MQTT:
 
 ## Anpassungen
 
-### Power Sensors anpassen
-Du kannst die Power Sensors in der Integrationskonfiguration jederzeit anpassen:
-1. **Settings** → **Devices & Services** → **Strom Zähler**
+### Configuration anpassen
+Du kannst die Power Sensors und Tarife in der Integrationskonfiguration jederzeit anpassen:
+1. **Settings** → **Devices & Services** → **Stromkosten Rechner**
 2. Klicke auf die Integration
 3. Klicke das Zahnrad (Options)
-4. Passe die Sensor-Namen an
+4. Passe die Sensor-Namen, Stromtarif und andere Parameter an
 
 ## Problembehebung
 
