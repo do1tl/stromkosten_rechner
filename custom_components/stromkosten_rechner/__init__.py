@@ -5,6 +5,7 @@ from pathlib import Path
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
+from homeassistant.components.http import StaticPathConfig
 
 from .const import DOMAIN, CONF_POWER_SENSORS
 
@@ -68,9 +69,12 @@ async def _setup_card(hass: HomeAssistant) -> None:
     version = "1.0.0"
     url = f"/hacsfiles/{DOMAIN}/stromkosten-rechner-card.js?v={version}"
     
-    await hass.http.async_register_static_paths(
-        [(f"/hacsfiles/{DOMAIN}", str(card_dir), False)]
+    config = StaticPathConfig(
+        url_path=f"/hacsfiles/{DOMAIN}",
+        path=str(card_dir),
+        cache_headers=False
     )
     
+    await hass.http.async_register_static_paths([config])
+    
     _LOGGER.info("Stromkosten Rechner Card registriert: %s", url)
-
