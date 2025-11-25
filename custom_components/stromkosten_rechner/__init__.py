@@ -1,5 +1,6 @@
 """Stromkosten Rechner Integration für Home Assistant."""
 import logging
+from pathlib import Path
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
@@ -33,6 +34,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+    
+    _copy_card_to_www(hass)
 
     return True
 
@@ -51,3 +54,24 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Reload config entry."""
     await async_unload_entry(hass, entry)
     await async_setup_entry(hass, entry)
+
+
+def _copy_card_to_www(hass: HomeAssistant) -> None:
+    """Copy card file to www directory."""
+    try:
+        card_src = Path(__file__).parent / "www" / "stromkosten-rechner-card.js"
+        www_dir = Path(hass.config.path("www"))
+        www_dir.mkdir(parents=True, exist_ok=True)
+        
+        card_dest = www_dir / "stromkosten-rechner-card.js"
+        
+        if card_src.exists():
+            with open(card_src, 'r') as f:
+                content = f.read()
+            with open(card_dest, 'w') as f:
+                f.write(content)
+            _LOGGER.info("Card-Datei kopiert nach: %s", card_dest)
+        else:
+            _LOGGER.warning("Card-Quelldatei nicht gefunden: %s", card_src)
+    except Exception as e:
+        _LOGGER.error("Fehler beim Kopieren der Card-Datei: %s", e)
