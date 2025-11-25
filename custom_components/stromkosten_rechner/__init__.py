@@ -1,11 +1,9 @@
 """Stromkosten Rechner Integration für Home Assistant."""
 import logging
-from pathlib import Path
 
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
-from homeassistant.components.http import StaticPathConfig
 
 from .const import DOMAIN, CONF_POWER_SENSORS
 
@@ -22,8 +20,6 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Stromkosten Rechner from a config entry."""
     hass.data.setdefault(DOMAIN, {})
-    
-    await _setup_card(hass)
     
     config_data = dict(entry.data)
     power_sensors_str = config_data.get(CONF_POWER_SENSORS, "")
@@ -55,26 +51,3 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Reload config entry."""
     await async_unload_entry(hass, entry)
     await async_setup_entry(hass, entry)
-
-
-async def _setup_card(hass: HomeAssistant) -> None:
-    """Setup the Lovelace card."""
-    card_dir = Path(__file__).parent / "www"
-    card_path = card_dir / "stromkosten-rechner-card.js"
-    
-    if not card_path.exists():
-        _LOGGER.warning("Card-Datei nicht gefunden: %s", card_path)
-        return
-    
-    version = "1.0.0"
-    url = f"/hacsfiles/{DOMAIN}/stromkosten-rechner-card.js?v={version}"
-    
-    config = StaticPathConfig(
-        url_path=f"/hacsfiles/{DOMAIN}",
-        path=str(card_dir),
-        cache_headers=False
-    )
-    
-    await hass.http.async_register_static_paths([config])
-    
-    _LOGGER.info("Stromkosten Rechner Card registriert: %s", url)

@@ -1,8 +1,10 @@
 {
   "name": "Stromkosten Rechner",
-  "content_in_root": false,
-  "filename": "stromkosten_rechner",
-  "render_readme": true,
   "homeassistant": "2024.1.0",
-  "iot_class": "local_polling"
+  "codeowners": ["@do1tl"],
+  "requirements": [],
+  "render_readme": true,
+  "domains": ["sensor"],
+  "documentation": "https://github.com/do1tl/stromkosten_rechner",
+  "issue_tracker": "https://github.com/do1tl/stromkosten_rechner/issues"
 }
