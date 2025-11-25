@@ -312,6 +312,7 @@ class KostenSensor(BaseSensor):
         if now != self._last_reset:
             self._daily_energy_ht = 0.0
             self._daily_energy_nt = 0.0
+            self._state = 0.0
             self._last_reset = now
 
         netzbezug_entity = "sensor.netzbezug"
@@ -770,15 +771,16 @@ class HTNTModusSensor(BaseSensor):
 
 
 class HTEnergieSensor(BaseSensor):
-    """HT Energie sensor - high tariff energy today."""
+    """HT Energie sensor - high tariff energy yearly."""
 
     def __init__(self, hass, config, entry_id):
         """Initialize."""
         super().__init__(hass, config, entry_id)
-        self._attr_name = "HT Energie"
+        self._attr_name = "Jahres HT Energie"
         self._attr_unique_id = f"{entry_id}_ht_energie"
         self._attr_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
         self._attr_icon = "mdi:lightning-bolt"
+        self._last_billing_year = None
 
     async def async_update(self):
         """Update sensor."""
@@ -787,20 +789,28 @@ class HTEnergieSensor(BaseSensor):
             return
 
         yearly_data = self.get_yearly_data()
+        current_year = get_current_billing_year(self._config)
+        
+        if self._last_billing_year != current_year:
+            yearly_data["ht_energy"] = 0.0
+            self._last_billing_year = current_year
+            await self.save_yearly_data()
+
         ht_energy = yearly_data.get("ht_energy", 0.0)
         self._state = round(ht_energy, 2)
 
 
 class NTEnergieSensor(BaseSensor):
-    """NT Energie sensor - low tariff energy today."""
+    """NT Energie sensor - low tariff energy yearly."""
 
     def __init__(self, hass, config, entry_id):
         """Initialize."""
         super().__init__(hass, config, entry_id)
-        self._attr_name = "NT Energie"
+        self._attr_name = "Jahres NT Energie"
         self._attr_unique_id = f"{entry_id}_nt_energie"
         self._attr_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
         self._attr_icon = "mdi:lightning-bolt"
+        self._last_billing_year = None
 
     async def async_update(self):
         """Update sensor."""
@@ -809,6 +819,13 @@ class NTEnergieSensor(BaseSensor):
             return
 
         yearly_data = self.get_yearly_data()
+        current_year = get_current_billing_year(self._config)
+        
+        if self._last_billing_year != current_year:
+            yearly_data["nt_energy"] = 0.0
+            self._last_billing_year = current_year
+            await self.save_yearly_data()
+
         nt_energy = yearly_data.get("nt_energy", 0.0)
         self._state = round(nt_energy, 2)
 
@@ -823,10 +840,17 @@ class JahresVerbrauchSensor(BaseSensor):
         self._attr_unique_id = f"{entry_id}_jahresverbrauch"
         self._attr_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
         self._attr_icon = "mdi:counter"
+        self._last_billing_year = None
 
     async def async_update(self):
         """Update sensor."""
         yearly_data = self.get_yearly_data()
+        current_year = get_current_billing_year(self._config)
+        
+        if self._last_billing_year != current_year:
+            yearly_data["energy_consumed"] = 0.0
+            self._last_billing_year = current_year
+            await self.save_yearly_data()
         
         netzbezug_entity = "sensor.netzbezug"
         state = self.hass.states.get(netzbezug_entity)
@@ -853,26 +877,29 @@ class JahresSolarertragSensor(BaseSensor):
         self._attr_unique_id = f"{entry_id}_jahres_solarertrag"
         self._attr_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
         self._attr_icon = "mdi:solar-power-variant"
-        self._last_solar_value = 0.0
-        self._last_update_day = None
+        self._last_billing_year = None
 
     async def async_update(self):
         """Update sensor."""
         yearly_data = self.get_yearly_data()
+        current_year = get_current_billing_year(self._config)
         
-        today = datetime.now().date()
-        if self._last_update_day != today:
-            solar_entity = "sensor.solarertrag"
-            state = self.hass.states.get(solar_entity)
-            
-            if state and state.state not in ["unknown", "unavailable"]:
-                try:
-                    current_solar = float(state.state)
-                    yearly_data["solar_produced"] = yearly_data.get("solar_produced", 0.0) + current_solar
-                    await self.save_yearly_data()
-                    self._last_update_day = today
-                except (ValueError, TypeError):
-                    pass
+        if self._last_billing_year != current_year:
+            yearly_data["solar_produced"] = 0.0
+            self._last_billing_year = current_year
+            await self.save_yearly_data()
+        
+        solar_entity = "sensor.solarertrag"
+        state = self.hass.states.get(solar_entity)
+        
+        if state and state.state not in ["unknown", "unavailable"]:
+            try:
+                power_w = float(state.state)
+                kwh_increment = (power_w / 1000.0) * (30.0 / 3600.0)
+                yearly_data["solar_produced"] = yearly_data.get("solar_produced", 0.0) + kwh_increment
+                await self.save_yearly_data()
+            except (ValueError, TypeError):
+                pass
         
         self._state = round(yearly_data.get("solar_produced", 0.0), 2)
 
@@ -972,21 +999,35 @@ class JahresEinspeisungSensor(BaseSensor):
         self._attr_unique_id = f"{entry_id}_jahres_einspeisung"
         self._attr_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
         self._attr_icon = "mdi:transmission-tower-export"
+        self._last_billing_year = None
         self._last_daily_value = 0.0
         self._last_update_day = None
 
     async def async_update(self):
         """Update sensor."""
         yearly_data = self.get_yearly_data()
+        current_year = get_current_billing_year(self._config)
+        
+        if self._last_billing_year != current_year:
+            yearly_data["einspeisung_yearly"] = 0.0
+            self._last_billing_year = current_year
+            self._last_daily_value = 0.0
+            self._last_update_day = None
+            await self.save_yearly_data()
         
         today = datetime.now().date()
         if self._last_update_day != today:
-            einspeisung_today = yearly_data.get("einspeisung_daily", 0.0)
-            if einspeisung_today > self._last_daily_value:
-                increment = einspeisung_today - self._last_daily_value
-                yearly_data["einspeisung_yearly"] = yearly_data.get("einspeisung_yearly", 0.0) + increment
-                await self.save_yearly_data()
-            self._last_daily_value = einspeisung_today
+            einspeisung_state = self.hass.states.get("sensor.einspeisung_heute")
+            if einspeisung_state and einspeisung_state.state not in ["unknown", "unavailable"]:
+                try:
+                    current_einspeisung = float(einspeisung_state.state)
+                    if current_einspeisung >= self._last_daily_value:
+                        increment = current_einspeisung - self._last_daily_value
+                        yearly_data["einspeisung_yearly"] = yearly_data.get("einspeisung_yearly", 0.0) + increment
+                        await self.save_yearly_data()
+                    self._last_daily_value = 0.0
+                except (ValueError, TypeError):
+                    pass
             self._last_update_day = today
         
         self._state = round(yearly_data.get("einspeisung_yearly", 0.0), 2)
