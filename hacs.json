@@ -6,5 +6,15 @@
   "render_readme": true,
   "domains": ["sensor"],
   "documentation": "https://github.com/do1tl/stromkosten_rechner",
-  "issue_tracker": "https://github.com/do1tl/stromkosten_rechner/issues"
+  "issue_tracker": "https://github.com/do1tl/stromkosten_rechner/issues",
+  "hacs": "1.0.0",
+  "content_in_root": false,
+  "filename": "stromkosten-rechner-card.js",
+  "frontend": [
+    {
+      "type": "module",
+      "name": "Stromkosten Rechner Card",
+      "path": "/www/stromkosten-rechner-card.js"
+    }
+  ]
 }

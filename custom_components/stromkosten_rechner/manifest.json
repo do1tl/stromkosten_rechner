@@ -7,5 +7,11 @@
   "iot_class": "local_polling",
   "requirements": [],
   "version": "1.0.0",
-  "issue_tracker": "https://github.com/do1tl/stromkosten_rechner/issues"
+  "issue_tracker": "https://github.com/do1tl/stromkosten_rechner/issues",
+  "frontend": [
+    {
+      "type": "module",
+      "path": "/www/stromkosten-rechner-card.js"
+    }
+  ]
 }
