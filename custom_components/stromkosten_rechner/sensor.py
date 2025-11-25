@@ -33,8 +33,8 @@ async def async_setup_entry(
     power_sensors = config_data.get(CONF_POWER_SENSORS, [])
     solar_power = config_data.get(CONF_SOLAR_POWER)
     solar_yield_day = config_data.get(CONF_SOLAR_YIELD_DAY)
-    yearly_start_day = config_data.get(CONF_YEARLY_START_DAY, 1)
-    cost_per_kwh = config_data.get(CONF_COST_PER_KWH, 0.30)
+    yearly_start_day = int(config_data.get(CONF_YEARLY_START_DAY, 1))
+    cost_per_kwh = float(config_data.get(CONF_COST_PER_KWH, 0.30))
 
     entities = [
         StromkostenConsumptionDaily(hass, power_sensors),
@@ -212,7 +212,7 @@ class StromkostenConsumptionYearly(SensorEntity):
     def __init__(self, hass: HomeAssistant, power_sensors: list[str], yearly_start_day: int = 1):
         self.hass = hass
         self.power_sensors = power_sensors
-        self.yearly_start_day = yearly_start_day
+        self.yearly_start_day = int(yearly_start_day)
         self._state = 0.0
         self._last_reset = self._get_yearly_start_date()
         self._accumulated = 0.0
@@ -286,7 +286,7 @@ class StromkostenConsumptionYearlyPrognosis(SensorEntity):
     def __init__(self, hass: HomeAssistant, power_sensors: list[str], yearly_start_day: int = 1):
         self.hass = hass
         self.power_sensors = power_sensors
-        self.yearly_start_day = yearly_start_day
+        self.yearly_start_day = int(yearly_start_day)
         self._state = 0.0
 
     async def async_added_to_hass(self) -> None:
@@ -334,7 +334,7 @@ class StromkostenCostDaily(SensorEntity):
     def __init__(self, hass: HomeAssistant, power_sensors: list[str], cost_per_kwh: float):
         self.hass = hass
         self.power_sensors = power_sensors
-        self.cost_per_kwh = cost_per_kwh
+        self.cost_per_kwh = float(cost_per_kwh)
         self._state = 0.0
 
     async def async_added_to_hass(self) -> None:
@@ -375,7 +375,7 @@ class StromkostenCostMonthly(SensorEntity):
     def __init__(self, hass: HomeAssistant, power_sensors: list[str], cost_per_kwh: float):
         self.hass = hass
         self.power_sensors = power_sensors
-        self.cost_per_kwh = cost_per_kwh
+        self.cost_per_kwh = float(cost_per_kwh)
         self._state = 0.0
 
     async def async_added_to_hass(self) -> None:
@@ -415,8 +415,8 @@ class StromkostenCostYearly(SensorEntity):
     def __init__(self, hass: HomeAssistant, power_sensors: list[str], cost_per_kwh: float, yearly_start_day: int = 1):
         self.hass = hass
         self.power_sensors = power_sensors
-        self.cost_per_kwh = cost_per_kwh
-        self.yearly_start_day = yearly_start_day
+        self.cost_per_kwh = float(cost_per_kwh)
+        self.yearly_start_day = int(yearly_start_day)
         self._state = 0.0
 
     async def async_added_to_hass(self) -> None:
@@ -456,8 +456,8 @@ class StromkostenCostYearlyPrognosis(SensorEntity):
     def __init__(self, hass: HomeAssistant, power_sensors: list[str], cost_per_kwh: float, yearly_start_day: int = 1):
         self.hass = hass
         self.power_sensors = power_sensors
-        self.cost_per_kwh = cost_per_kwh
-        self.yearly_start_day = yearly_start_day
+        self.cost_per_kwh = float(cost_per_kwh)
+        self.yearly_start_day = int(yearly_start_day)
         self._state = 0.0
 
     async def async_added_to_hass(self) -> None:
@@ -619,7 +619,7 @@ class SolarYieldYearly(SensorEntity):
     def __init__(self, hass: HomeAssistant, solar_yield_day: Optional[str], yearly_start_day: int = 1):
         self.hass = hass
         self.solar_yield_day = solar_yield_day
-        self.yearly_start_day = yearly_start_day
+        self.yearly_start_day = int(yearly_start_day)
         self._state = 0.0
         self._last_reset = self._get_yearly_start_date()
         self._accumulated = 0.0

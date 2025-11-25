@@ -68,7 +68,7 @@ async def _setup_card(hass: HomeAssistant) -> None:
     version = "1.0.0"
     url = f"/hacsfiles/{DOMAIN}/stromkosten-rechner-card.js?v={version}"
     
-    hass.http.async_register_static_paths(
+    await hass.http.async_register_static_paths(
         [(f"/hacsfiles/{DOMAIN}", str(card_dir), False)]
     )
     
