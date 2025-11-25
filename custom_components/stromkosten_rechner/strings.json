@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Stromkosten Rechner Konfiguration",
+        "description": "Konfiguriere die Sensoren für deinen Stromzähler",
+        "data": {
+          "power_sensors": "Stromleistungs-Sensoren (eine pro Zeile)",
+          "solar_power": "Solar-Leistungs-Sensor",
+          "solar_yield_day": "Solar-Ertrag (Tagesertrag) Sensor",
+          "yearly_start_day": "Jährlicher Ablesetermin (Tag, 1-31)",
+          "cost_per_kwh": "Stromkosten pro kWh (€)"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Stromkosten Rechner Optionen",
+        "description": "Bearbeite die Sensor-Konfiguration",
+        "data": {
+          "power_sensors": "Stromleistungs-Sensoren (eine pro Zeile)",
+          "solar_power": "Solar-Leistungs-Sensor",
+          "solar_yield_day": "Solar-Ertrag Sensor",
+          "yearly_start_day": "Jährlicher Ablesetermin (Tag, 1-31)",
+          "cost_per_kwh": "Stromkosten pro kWh (€)"
+        }
+      }
+    }
+  }
+}

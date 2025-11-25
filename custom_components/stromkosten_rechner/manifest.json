@@ -1,0 +1,11 @@
+{
+  "domain": "stromkosten_rechner",
+  "name": "Stromkosten Rechner",
+  "codeowners": ["@do1tl"],
+  "config_flow": true,
+  "documentation": "https://github.com/do1tl/stromkosten_rechner",
+  "iot_class": "local_polling",
+  "requirements": [],
+  "version": "1.0.0",
+  "issue_tracker": "https://github.com/do1tl/stromkosten_rechner/issues"
+}
