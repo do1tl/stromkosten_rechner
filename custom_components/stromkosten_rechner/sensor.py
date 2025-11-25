@@ -3,10 +3,10 @@ from datetime import datetime, timedelta
 from typing import Any, Optional
 
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfEnergy, STATE_UNKNOWN, UnitOfTime
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 from homeassistant.helpers.event import async_track_state_change
 from homeassistant.util import dt as dt_util
 
@@ -22,16 +22,12 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_platform(
+async def async_setup_entry(
     hass: HomeAssistant,
-    config: ConfigType,
+    config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
-    discovery_info: DiscoveryInfoType | None = None,
-) -> None:
-    if discovery_info is None:
-        return
-
-    config_data = hass.data[DOMAIN][discovery_info[DOMAIN]]
+) -> bool:
+    config_data = hass.data[DOMAIN][config_entry.entry_id]
     
     power_sensors = config_data.get(CONF_POWER_SENSORS, [])
     solar_power = config_data.get(CONF_SOLAR_POWER)
@@ -54,6 +50,7 @@ async def async_setup_platform(
     ]
 
     async_add_entities(entities, True)
+    return True
 
 
 def get_day_of_year(date):

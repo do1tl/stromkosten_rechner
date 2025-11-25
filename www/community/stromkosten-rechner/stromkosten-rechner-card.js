@@ -1,7 +1,6 @@
 class StromkostenRechnerCard extends HTMLElement {
   setConfig(config) {
-    if (!config) throw new Error('Invalid config');
-    this.config = config;
+    this.config = config || {};
   }
 
   set hass(hass) {
@@ -9,15 +8,9 @@ class StromkostenRechnerCard extends HTMLElement {
     this._render();
   }
 
-  static getConfigElement() {
-    return document.createElement('stromkosten-rechner-card-editor');
-  }
-
-  static getStubConfig() {
-    return {};
-  }
-
   _render() {
+    if (!this._hass) return;
+    
     if (!this.shadowRoot) {
       this.attachShadow({ mode: 'open' });
     }
@@ -25,35 +18,33 @@ class StromkostenRechnerCard extends HTMLElement {
     const config = this.config;
     const hass = this._hass;
 
-    const consumption_daily = hass.states[config.consumption_daily || "sensor.stromkosten_consumption_daily"];
-    const consumption_monthly = hass.states[config.consumption_monthly || "sensor.stromkosten_consumption_monthly"];
-    const consumption_yearly = hass.states[config.consumption_yearly || "sensor.stromkosten_consumption_yearly"];
-    const consumption_yearly_prognosis = hass.states[config.consumption_yearly_prognosis || "sensor.stromkosten_consumption_yearly_prognosis"];
-    
-    const cost_daily = hass.states[config.cost_daily || "sensor.stromkosten_cost_daily"];
-    const cost_monthly = hass.states[config.cost_monthly || "sensor.stromkosten_cost_monthly"];
-    const cost_yearly = hass.states[config.cost_yearly || "sensor.stromkosten_cost_yearly"];
-    const cost_yearly_prognosis = hass.states[config.cost_yearly_prognosis || "sensor.stromkosten_cost_yearly_prognosis"];
-    
-    const solar_yield_daily = hass.states[config.solar_yield_daily || "sensor.solar_yield_daily"];
-    const solar_yield_monthly = hass.states[config.solar_yield_monthly || "sensor.solar_yield_monthly"];
-    const solar_yield_yearly = hass.states[config.solar_yield_yearly || "sensor.solar_yield_yearly"];
+    const getState = (entityId) => {
+      const state = hass.states[entityId];
+      return state ? parseFloat(state.state) : 0;
+    };
 
-    const getValue = (state) => state ? parseFloat(state.state) : 0;
+    const consumption_daily = getState(config.consumption_daily || "sensor.stromkosten_consumption_daily");
+    const consumption_monthly = getState(config.consumption_monthly || "sensor.stromkosten_consumption_monthly");
+    const consumption_yearly = getState(config.consumption_yearly || "sensor.stromkosten_consumption_yearly");
+    const consumption_yearly_prognosis = getState(config.consumption_yearly_prognosis || "sensor.stromkosten_consumption_yearly_prognosis");
+    
+    const cost_daily = getState(config.cost_daily || "sensor.stromkosten_cost_daily");
+    const cost_monthly = getState(config.cost_monthly || "sensor.stromkosten_cost_monthly");
+    const cost_yearly = getState(config.cost_yearly || "sensor.stromkosten_cost_yearly");
+    const cost_yearly_prognosis = getState(config.cost_yearly_prognosis || "sensor.stromkosten_cost_yearly_prognosis");
+    
+    const solar_yield_daily = getState(config.solar_yield_daily || "sensor.solar_yield_daily");
+    const solar_yield_monthly = getState(config.solar_yield_monthly || "sensor.solar_yield_monthly");
+    const solar_yield_yearly = getState(config.solar_yield_yearly || "sensor.solar_yield_yearly");
 
     const html = `
       <style>
         :host {
-          --primary-color: #2196f3;
-          --secondary-color: #ff9800;
-          --background-color: #f5f5f5;
-          --card-background: #ffffff;
-          --text-color: #333333;
-          --border-color: #e0e0e0;
+          display: block;
         }
 
         ha-card {
-          background: var(--card-background);
+          background: #ffffff;
           border-radius: 8px;
           box-shadow: 0 2px 4px rgba(0,0,0,0.1);
           padding: 16px;
@@ -62,7 +53,7 @@ class StromkostenRechnerCard extends HTMLElement {
         .card-title {
           font-size: 24px;
           font-weight: bold;
-          color: var(--text-color);
+          color: #333333;
           margin-bottom: 20px;
           text-align: center;
         }
@@ -80,7 +71,7 @@ class StromkostenRechnerCard extends HTMLElement {
           padding: 12px;
           color: white;
           text-align: center;
-          border: 1px solid var(--border-color);
+          border: 1px solid #e0e0e0;
           box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
@@ -94,11 +85,6 @@ class StromkostenRechnerCard extends HTMLElement {
 
         .counter-box.solar {
           background: linear-gradient(135deg, #ffa500 0%, #ff6347 100%);
-        }
-
-        .counter-box.prognosis {
-          background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
-          opacity: 0.9;
         }
 
         .counter-label {
@@ -124,7 +110,7 @@ class StromkostenRechnerCard extends HTMLElement {
         .row-label {
           font-size: 13px;
           font-weight: 600;
-          color: var(--text-color);
+          color: #333333;
           margin-top: 14px;
           margin-bottom: 8px;
           text-transform: uppercase;
@@ -157,57 +143,57 @@ class StromkostenRechnerCard extends HTMLElement {
         <div class="counter-grid">
           <div class="counter-box consumption">
             <div class="counter-label">Heute</div>
-            <div class="counter-value">${getValue(consumption_daily).toFixed(2)}</div>
+            <div class="counter-value">${consumption_daily.toFixed(2)}</div>
             <div class="counter-unit">kWh</div>
           </div>
           <div class="counter-box cost">
             <div class="counter-label">Heute</div>
-            <div class="counter-value">${getValue(cost_daily).toFixed(2)}</div>
+            <div class="counter-value">${cost_daily.toFixed(2)}</div>
             <div class="counter-unit">€</div>
           </div>
           <div class="counter-box consumption">
             <div class="counter-label">Monatlich</div>
-            <div class="counter-value">${getValue(consumption_monthly).toFixed(2)}</div>
+            <div class="counter-value">${consumption_monthly.toFixed(2)}</div>
             <div class="counter-unit">kWh</div>
           </div>
           <div class="counter-box cost">
             <div class="counter-label">Monatlich</div>
-            <div class="counter-value">${getValue(cost_monthly).toFixed(2)}</div>
+            <div class="counter-value">${cost_monthly.toFixed(2)}</div>
             <div class="counter-unit">€</div>
           </div>
           <div class="counter-box consumption">
             <div class="counter-label">Jährlich</div>
-            <div class="counter-value">${getValue(consumption_yearly).toFixed(2)}</div>
+            <div class="counter-value">${consumption_yearly.toFixed(2)}</div>
             <div class="counter-unit">kWh</div>
           </div>
           <div class="counter-box cost">
             <div class="counter-label">Jährlich</div>
-            <div class="counter-value">${getValue(cost_yearly).toFixed(2)}</div>
+            <div class="counter-value">${cost_yearly.toFixed(2)}</div>
             <div class="counter-unit">€</div>
           </div>
         </div>
 
         <div class="prognosis-info">
           <div class="info-text"><strong>📈 Prognose:</strong></div>
-          <div class="info-text">Verbrauch: <strong>${getValue(consumption_yearly_prognosis).toFixed(0)} kWh/Jahr</strong></div>
-          <div class="info-text">Kosten: <strong>${getValue(cost_yearly_prognosis).toFixed(2)} €/Jahr</strong></div>
+          <div class="info-text">Verbrauch: <strong>${consumption_yearly_prognosis.toFixed(0)} kWh/Jahr</strong></div>
+          <div class="info-text">Kosten: <strong>${cost_yearly_prognosis.toFixed(2)} €/Jahr</strong></div>
         </div>
 
         <div class="row-label">☀️ Solarertrag</div>
         <div class="counter-grid">
           <div class="counter-box solar">
             <div class="counter-label">Heute</div>
-            <div class="counter-value">${getValue(solar_yield_daily).toFixed(2)}</div>
+            <div class="counter-value">${solar_yield_daily.toFixed(2)}</div>
             <div class="counter-unit">kWh</div>
           </div>
           <div class="counter-box solar">
             <div class="counter-label">Monatlich</div>
-            <div class="counter-value">${getValue(solar_yield_monthly).toFixed(2)}</div>
+            <div class="counter-value">${solar_yield_monthly.toFixed(2)}</div>
             <div class="counter-unit">kWh</div>
           </div>
           <div class="counter-box solar">
             <div class="counter-label">Jährlich</div>
-            <div class="counter-value">${getValue(solar_yield_yearly).toFixed(2)}</div>
+            <div class="counter-value">${solar_yield_yearly.toFixed(2)}</div>
             <div class="counter-unit">kWh</div>
           </div>
         </div>
