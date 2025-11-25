@@ -8,6 +8,7 @@ from homeassistant.const import UnitOfEnergy, STATE_UNKNOWN, UnitOfTime
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_state_change
+from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import (
@@ -45,8 +46,8 @@ async def async_setup_entry(
         StromkostenCostYearly(hass, power_sensors, cost_per_kwh, yearly_start_day),
         StromkostenCostYearlyPrognosis(hass, power_sensors, cost_per_kwh, yearly_start_day),
         SolarYieldDaily(hass, solar_yield_day),
-        SolarYieldMonthly(hass),
-        SolarYieldYearly(hass),
+        SolarYieldMonthly(hass, solar_yield_day),
+        SolarYieldYearly(hass, solar_yield_day, yearly_start_day),
     ]
 
     async_add_entities(entities, True)
@@ -82,8 +83,17 @@ class StromkostenConsumptionDaily(SensorEntity):
         self._state = 0.0
         self._last_reset = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         self._accumulated = 0.0
+        self._store = Store(hass, 1, f"{DOMAIN}_daily_consumption")
 
     async def async_added_to_hass(self) -> None:
+        stored_data = await self._store.async_load()
+        if stored_data:
+            try:
+                self._accumulated = float(stored_data.get("accumulated", 0.0))
+                self._last_reset = datetime.fromisoformat(stored_data.get("last_reset", self._last_reset.isoformat()))
+            except (ValueError, TypeError):
+                pass
+        
         self.async_on_remove(
             async_track_state_change(
                 self.hass,
@@ -104,6 +114,7 @@ class StromkostenConsumptionDaily(SensorEntity):
         if current_date > self._last_reset:
             self._accumulated = 0.0
             self._last_reset = current_date
+            await self._store.async_save({"accumulated": self._accumulated, "last_reset": self._last_reset.isoformat()})
 
         total_power = 0.0
         for sensor_id in self.power_sensors:
@@ -116,6 +127,7 @@ class StromkostenConsumptionDaily(SensorEntity):
 
         if total_power > 0:
             self._accumulated += (total_power / 1000 / 3600)
+            await self._store.async_save({"accumulated": self._accumulated, "last_reset": self._last_reset.isoformat()})
 
         self._state = round(self._accumulated, 2)
 
@@ -135,8 +147,19 @@ class StromkostenConsumptionMonthly(SensorEntity):
         self.hass = hass
         self.power_sensors = power_sensors
         self._state = 0.0
+        self._last_reset = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        self._accumulated = 0.0
+        self._store = Store(hass, 1, f"{DOMAIN}_monthly_consumption")
 
     async def async_added_to_hass(self) -> None:
+        stored_data = await self._store.async_load()
+        if stored_data:
+            try:
+                self._accumulated = float(stored_data.get("accumulated", 0.0))
+                self._last_reset = datetime.fromisoformat(stored_data.get("last_reset", self._last_reset.isoformat()))
+            except (ValueError, TypeError):
+                pass
+        
         self.async_on_remove(
             async_track_state_change(
                 self.hass,
@@ -144,13 +167,35 @@ class StromkostenConsumptionMonthly(SensorEntity):
                 self._power_changed
             )
         )
+        await self.async_update()
 
     @callback
     def _power_changed(self, entity_id, old_state, new_state):
         self.async_schedule_update_ha_state(force_refresh=True)
 
     async def async_update(self) -> None:
-        self._state = 0.0
+        now = datetime.now()
+        current_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        if current_month > self._last_reset:
+            self._accumulated = 0.0
+            self._last_reset = current_month
+            await self._store.async_save({"accumulated": self._accumulated, "last_reset": self._last_reset.isoformat()})
+
+        total_power = 0.0
+        for sensor_id in self.power_sensors:
+            state = self.hass.states.get(sensor_id)
+            if state and state.state not in (STATE_UNKNOWN, None, "unavailable"):
+                try:
+                    total_power += float(state.state)
+                except ValueError:
+                    pass
+
+        if total_power > 0:
+            self._accumulated += (total_power / 1000 / 3600)
+            await self._store.async_save({"accumulated": self._accumulated, "last_reset": self._last_reset.isoformat()})
+
+        self._state = round(self._accumulated, 2)
 
     @property
     def state(self) -> str | None:
@@ -169,8 +214,27 @@ class StromkostenConsumptionYearly(SensorEntity):
         self.power_sensors = power_sensors
         self.yearly_start_day = yearly_start_day
         self._state = 0.0
+        self._last_reset = self._get_yearly_start_date()
+        self._accumulated = 0.0
+        self._store = Store(hass, 1, f"{DOMAIN}_yearly_consumption")
+
+    def _get_yearly_start_date(self) -> datetime:
+        now = datetime.now()
+        if now.day >= self.yearly_start_day:
+            return now.replace(month=1, day=self.yearly_start_day, hour=0, minute=0, second=0, microsecond=0)
+        else:
+            prev_year = now.year - 1
+            return now.replace(year=prev_year, month=1, day=self.yearly_start_day, hour=0, minute=0, second=0, microsecond=0)
 
     async def async_added_to_hass(self) -> None:
+        stored_data = await self._store.async_load()
+        if stored_data:
+            try:
+                self._accumulated = float(stored_data.get("accumulated", 0.0))
+                self._last_reset = datetime.fromisoformat(stored_data.get("last_reset", self._last_reset.isoformat()))
+            except (ValueError, TypeError):
+                pass
+        
         self.async_on_remove(
             async_track_state_change(
                 self.hass,
@@ -178,13 +242,34 @@ class StromkostenConsumptionYearly(SensorEntity):
                 self._power_changed
             )
         )
+        await self.async_update()
 
     @callback
     def _power_changed(self, entity_id, old_state, new_state):
         self.async_schedule_update_ha_state(force_refresh=True)
 
     async def async_update(self) -> None:
-        self._state = 0.0
+        new_reset_date = self._get_yearly_start_date()
+        
+        if new_reset_date > self._last_reset:
+            self._accumulated = 0.0
+            self._last_reset = new_reset_date
+            await self._store.async_save({"accumulated": self._accumulated, "last_reset": self._last_reset.isoformat()})
+
+        total_power = 0.0
+        for sensor_id in self.power_sensors:
+            state = self.hass.states.get(sensor_id)
+            if state and state.state not in (STATE_UNKNOWN, None, "unavailable"):
+                try:
+                    total_power += float(state.state)
+                except ValueError:
+                    pass
+
+        if total_power > 0:
+            self._accumulated += (total_power / 1000 / 3600)
+            await self._store.async_save({"accumulated": self._accumulated, "last_reset": self._last_reset.isoformat()})
+
+        self._state = round(self._accumulated, 2)
 
     @property
     def state(self) -> str | None:
@@ -451,12 +536,73 @@ class SolarYieldMonthly(SensorEntity):
     _attr_state_class = SensorStateClass.TOTAL
     _attr_icon = "mdi:calendar-month"
 
-    def __init__(self, hass: HomeAssistant):
+    def __init__(self, hass: HomeAssistant, solar_yield_day: Optional[str]):
         self.hass = hass
+        self.solar_yield_day = solar_yield_day
         self._state = 0.0
+        self._last_reset = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        self._accumulated = 0.0
+        self._last_yield_value = 0.0
+        self._store = Store(hass, 1, f"{DOMAIN}_solar_yield_monthly")
+
+    async def async_added_to_hass(self) -> None:
+        stored_data = await self._store.async_load()
+        if stored_data:
+            try:
+                self._accumulated = float(stored_data.get("accumulated", 0.0))
+                self._last_reset = datetime.fromisoformat(stored_data.get("last_reset", self._last_reset.isoformat()))
+                self._last_yield_value = float(stored_data.get("last_yield_value", 0.0))
+            except (ValueError, TypeError):
+                pass
+        
+        if self.solar_yield_day:
+            self.async_on_remove(
+                async_track_state_change(
+                    self.hass,
+                    self.solar_yield_day,
+                    self._yield_changed
+                )
+            )
+        await self.async_update()
+
+    @callback
+    def _yield_changed(self, entity_id, old_state, new_state):
+        self.async_schedule_update_ha_state(force_refresh=True)
 
     async def async_update(self) -> None:
-        self._state = 0.0
+        if not self.solar_yield_day:
+            self._state = 0.0
+            return
+
+        now = datetime.now()
+        current_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        if current_month > self._last_reset:
+            self._accumulated = 0.0
+            self._last_yield_value = 0.0
+            self._last_reset = current_month
+            await self._store.async_save({
+                "accumulated": self._accumulated,
+                "last_reset": self._last_reset.isoformat(),
+                "last_yield_value": self._last_yield_value
+            })
+
+        state = self.hass.states.get(self.solar_yield_day)
+        if state and state.state not in (STATE_UNKNOWN, None, "unavailable"):
+            try:
+                yield_value = float(state.state)
+                if yield_value < self._last_yield_value:
+                    self._accumulated += self._last_yield_value
+                    await self._store.async_save({
+                        "accumulated": self._accumulated,
+                        "last_reset": self._last_reset.isoformat(),
+                        "last_yield_value": 0.0
+                    })
+                self._last_yield_value = yield_value
+            except ValueError:
+                pass
+
+        self._state = round(self._accumulated, 2)
 
     @property
     def state(self) -> str | None:
@@ -470,12 +616,81 @@ class SolarYieldYearly(SensorEntity):
     _attr_state_class = SensorStateClass.TOTAL
     _attr_icon = "mdi:calendar-year"
 
-    def __init__(self, hass: HomeAssistant):
+    def __init__(self, hass: HomeAssistant, solar_yield_day: Optional[str], yearly_start_day: int = 1):
         self.hass = hass
+        self.solar_yield_day = solar_yield_day
+        self.yearly_start_day = yearly_start_day
         self._state = 0.0
+        self._last_reset = self._get_yearly_start_date()
+        self._accumulated = 0.0
+        self._last_yield_value = 0.0
+        self._store = Store(hass, 1, f"{DOMAIN}_solar_yield_yearly")
+
+    def _get_yearly_start_date(self) -> datetime:
+        now = datetime.now()
+        if now.day >= self.yearly_start_day:
+            return now.replace(month=1, day=self.yearly_start_day, hour=0, minute=0, second=0, microsecond=0)
+        else:
+            prev_year = now.year - 1
+            return now.replace(year=prev_year, month=1, day=self.yearly_start_day, hour=0, minute=0, second=0, microsecond=0)
+
+    async def async_added_to_hass(self) -> None:
+        stored_data = await self._store.async_load()
+        if stored_data:
+            try:
+                self._accumulated = float(stored_data.get("accumulated", 0.0))
+                self._last_reset = datetime.fromisoformat(stored_data.get("last_reset", self._last_reset.isoformat()))
+                self._last_yield_value = float(stored_data.get("last_yield_value", 0.0))
+            except (ValueError, TypeError):
+                pass
+        
+        if self.solar_yield_day:
+            self.async_on_remove(
+                async_track_state_change(
+                    self.hass,
+                    self.solar_yield_day,
+                    self._yield_changed
+                )
+            )
+        await self.async_update()
+
+    @callback
+    def _yield_changed(self, entity_id, old_state, new_state):
+        self.async_schedule_update_ha_state(force_refresh=True)
 
     async def async_update(self) -> None:
-        self._state = 0.0
+        if not self.solar_yield_day:
+            self._state = 0.0
+            return
+
+        new_reset_date = self._get_yearly_start_date()
+        
+        if new_reset_date > self._last_reset:
+            self._accumulated = 0.0
+            self._last_yield_value = 0.0
+            self._last_reset = new_reset_date
+            await self._store.async_save({
+                "accumulated": self._accumulated,
+                "last_reset": self._last_reset.isoformat(),
+                "last_yield_value": self._last_yield_value
+            })
+
+        state = self.hass.states.get(self.solar_yield_day)
+        if state and state.state not in (STATE_UNKNOWN, None, "unavailable"):
+            try:
+                yield_value = float(state.state)
+                if yield_value < self._last_yield_value:
+                    self._accumulated += self._last_yield_value
+                    await self._store.async_save({
+                        "accumulated": self._accumulated,
+                        "last_reset": self._last_reset.isoformat(),
+                        "last_yield_value": 0.0
+                    })
+                self._last_yield_value = yield_value
+            except ValueError:
+                pass
+
+        self._state = round(self._accumulated, 2)
 
     @property
     def state(self) -> str | None:

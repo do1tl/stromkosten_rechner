@@ -68,10 +68,8 @@ async def _setup_card(hass: HomeAssistant) -> None:
     version = "1.0.0"
     url = f"/hacsfiles/{DOMAIN}/stromkosten-rechner-card.js?v={version}"
     
-    hass.http.register_static_path(
-        f"/hacsfiles/{DOMAIN}",
-        str(card_dir),
-        cache_headers=False
+    hass.http.async_register_static_paths(
+        [(f"/hacsfiles/{DOMAIN}", str(card_dir), False)]
     )
     
     _LOGGER.info("Stromkosten Rechner Card registriert: %s", url)
