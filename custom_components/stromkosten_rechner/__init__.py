@@ -5,6 +5,8 @@ from pathlib import Path
 from homeassistant.core import HomeAssistant
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
+from homeassistant.components.http import StaticPathConfig
+from aiohttp import web
 
 from .const import DOMAIN, CONF_POWER_SENSORS
 
@@ -34,6 +36,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+    
+    card_dir = Path(__file__).parent / "www"
+    
+    hass.http.register_static_paths(
+        [
+            StaticPathConfig(
+                url_path="/stromkosten_rechner_card",
+                path=str(card_dir),
+                cache_headers=False
+            )
+        ]
+    )
     
     await _copy_card_to_www_async(hass)
 

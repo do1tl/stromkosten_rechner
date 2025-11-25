@@ -1,0 +1,7 @@
+{
+  "name": "Stromkosten Rechner",
+  "country": "DE",
+  "homeassistant": "2024.1.0",
+  "requirements": [],
+  "render_readme": true
+}
