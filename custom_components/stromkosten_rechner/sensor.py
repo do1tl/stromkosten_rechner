@@ -878,6 +878,8 @@ class JahresSolarertragSensor(BaseSensor):
         self._attr_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
         self._attr_icon = "mdi:solar-power-variant"
         self._last_billing_year = None
+        self._last_solar_value = 0.0
+        self._last_update_day = None
 
     async def async_update(self):
         """Update sensor."""
@@ -887,19 +889,26 @@ class JahresSolarertragSensor(BaseSensor):
         if self._last_billing_year != current_year:
             yearly_data["solar_produced"] = 0.0
             self._last_billing_year = current_year
+            self._last_solar_value = 0.0
+            self._last_update_day = None
             await self.save_yearly_data()
         
-        solar_entity = "sensor.solarertrag"
-        state = self.hass.states.get(solar_entity)
-        
-        if state and state.state not in ["unknown", "unavailable"]:
-            try:
-                power_w = float(state.state)
-                kwh_increment = (power_w / 1000.0) * (30.0 / 3600.0)
-                yearly_data["solar_produced"] = yearly_data.get("solar_produced", 0.0) + kwh_increment
-                await self.save_yearly_data()
-            except (ValueError, TypeError):
-                pass
+        today = datetime.now().date()
+        if self._last_update_day != today:
+            solar_entity = "sensor.solarertrag"
+            state = self.hass.states.get(solar_entity)
+            
+            if state and state.state not in ["unknown", "unavailable"]:
+                try:
+                    current_solar = float(state.state)
+                    if current_solar >= self._last_solar_value:
+                        increment = current_solar - self._last_solar_value
+                        yearly_data["solar_produced"] = yearly_data.get("solar_produced", 0.0) + increment
+                        await self.save_yearly_data()
+                    self._last_solar_value = 0.0
+                except (ValueError, TypeError):
+                    pass
+            self._last_update_day = today
         
         self._state = round(yearly_data.get("solar_produced", 0.0), 2)
 
