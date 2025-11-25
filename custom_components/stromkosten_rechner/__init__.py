@@ -12,14 +12,15 @@ PLATFORMS = [Platform.SENSOR]
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = entry.data
-
-    config_data = entry.data
+    
+    config_data = dict(entry.data)
     power_sensors_str = config_data.get(CONF_POWER_SENSORS, "")
     
     if isinstance(power_sensors_str, str):
         power_sensors = [s.strip() for s in power_sensors_str.split("\n") if s.strip()]
         config_data[CONF_POWER_SENSORS] = power_sensors
+    
+    hass.data[DOMAIN][entry.entry_id] = config_data
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
