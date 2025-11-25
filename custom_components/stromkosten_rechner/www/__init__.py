@@ -1,2 +1,9 @@
-"""Initialize the www directory for static files."""
-# This file is intentionally left empty. It's used to make the www directory a Python package.
+"""Die Stromkosten Rechner Integration."""
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.typing import ConfigType
+
+DOMAIN = "stromkosten_rechner"
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Richte die Stromkosten Rechner Komponente ein."""
+    return True

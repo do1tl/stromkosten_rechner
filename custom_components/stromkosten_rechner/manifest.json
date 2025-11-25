@@ -8,10 +8,5 @@
   "requirements": [],
   "version": "1.0.0",
   "issue_tracker": "https://github.com/do1tl/stromkosten_rechner/issues",
-  "frontend": [
-    {
-      "type": "module",
-      "path": "/www/stromkosten-rechner-card.js"
-    }
-  ]
+  "hacs": "1.6.0"
 }
