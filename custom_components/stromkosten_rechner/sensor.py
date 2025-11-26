@@ -602,3 +602,31 @@ class SolarYieldYearly(SensorEntity):
     @property
     def state(self) -> str | None:
         return self._state if self._state is not None else STATE_UNKNOWN
+
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up sensors from a config entry."""
+    config_data = hass.data.get(DOMAIN, {}).get(entry.entry_id, {})
+    
+    power_sensors = config_data.get(CONF_POWER_SENSORS, [])
+    solar_power = config_data.get(CONF_SOLAR_POWER)
+    solar_yield_day = config_data.get(CONF_SOLAR_YIELD_DAY)
+    yearly_start_day = config_data.get(CONF_YEARLY_START_DAY, 1)
+    yearly_start_month = config_data.get(CONF_YEARLY_START_MONTH, 1)
+    cost_per_kwh = config_data.get(CONF_COST_PER_KWH, 0.30)
+    
+    entities = [
+        StromkostenConsumptionDaily(hass, power_sensors),
+        StromkostenConsumptionMonthly(hass, power_sensors),
+        StromkostenConsumptionYearly(hass, power_sensors, yearly_start_day, yearly_start_month),
+        StromkostenConsumptionYearlyPrognosis(hass, power_sensors, yearly_start_day, yearly_start_month),
+        StromkostenCostYearly(hass, power_sensors, cost_per_kwh, yearly_start_day, yearly_start_month),
+        StromkostenCostYearlyPrognosis(hass, power_sensors, cost_per_kwh, yearly_start_day, yearly_start_month),
+        SolarYieldYearly(hass, solar_yield_day, yearly_start_day, yearly_start_month),
+    ]
+    
+    async_add_entities(entities)
