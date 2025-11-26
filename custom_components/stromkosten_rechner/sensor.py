@@ -7,7 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfEnergy, STATE_UNKNOWN, UnitOfTime
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.event import async_track_state_change, async_track_time_interval
+from homeassistant.helpers.event import async_track_state_change_event, async_track_time_interval
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
@@ -55,9 +55,8 @@ class StromkostenConsumptionDaily(SensorEntity):
         # Initialisiere Zeitstempel
         self._last_update_time = datetime.now()
         
-        # State-Change-Tracker für sofortige Updates
         self.async_on_remove(
-            async_track_state_change(
+            async_track_state_change_event(
                 self.hass,
                 self.power_sensors,
                 self._power_changed
@@ -76,7 +75,7 @@ class StromkostenConsumptionDaily(SensorEntity):
         await self.async_update()
 
     @callback
-    def _power_changed(self, entity_id, old_state, new_state):
+    def _power_changed(self, event):
         """Wird aufgerufen, wenn sich ein Power-Sensor ändert"""
         self.async_schedule_update_ha_state(force_refresh=True)
 
@@ -169,7 +168,7 @@ class StromkostenConsumptionMonthly(SensorEntity):
         self._last_update_time = datetime.now()
         
         self.async_on_remove(
-            async_track_state_change(
+            async_track_state_change_event(
                 self.hass,
                 self.power_sensors,
                 self._power_changed
@@ -187,7 +186,7 @@ class StromkostenConsumptionMonthly(SensorEntity):
         await self.async_update()
 
     @callback
-    def _power_changed(self, entity_id, old_state, new_state):
+    def _power_changed(self, event):
         self.async_schedule_update_ha_state(force_refresh=True)
 
     async def _periodic_update(self, now):
@@ -290,7 +289,7 @@ class StromkostenConsumptionYearly(SensorEntity):
         self._last_update_time = datetime.now()
         
         self.async_on_remove(
-            async_track_state_change(
+            async_track_state_change_event(
                 self.hass,
                 self.power_sensors,
                 self._power_changed
@@ -308,7 +307,7 @@ class StromkostenConsumptionYearly(SensorEntity):
         await self.async_update()
 
     @callback
-    def _power_changed(self, entity_id, old_state, new_state):
+    def _power_changed(self, event):
         self.async_schedule_update_ha_state(force_refresh=True)
 
     async def _periodic_update(self, now):
@@ -393,7 +392,7 @@ class StromkostenConsumptionYearlyPrognosis(SensorEntity):
 
     async def async_added_to_hass(self) -> None:
         self.async_on_remove(
-            async_track_state_change(
+            async_track_state_change_event(
                 self.hass,
                 self.power_sensors,
                 self._power_changed
@@ -402,7 +401,7 @@ class StromkostenConsumptionYearlyPrognosis(SensorEntity):
         await self.async_update()
 
     @callback
-    def _power_changed(self, entity_id, old_state, new_state):
+    def _power_changed(self, event):
         self.async_schedule_update_ha_state(force_refresh=True)
 
     async def async_update(self) -> None:
@@ -444,7 +443,7 @@ class StromkostenCostYearly(SensorEntity):
 
     async def async_added_to_hass(self) -> None:
         self.async_on_remove(
-            async_track_state_change(
+            async_track_state_change_event(
                 self.hass,
                 self.power_sensors,
                 self._power_changed
@@ -452,7 +451,7 @@ class StromkostenCostYearly(SensorEntity):
         )
 
     @callback
-    def _power_changed(self, entity_id, old_state, new_state):
+    def _power_changed(self, event):
         self.async_schedule_update_ha_state(force_refresh=True)
 
     async def async_update(self) -> None:
@@ -486,7 +485,7 @@ class StromkostenCostYearlyPrognosis(SensorEntity):
 
     async def async_added_to_hass(self) -> None:
         self.async_on_remove(
-            async_track_state_change(
+            async_track_state_change_event(
                 self.hass,
                 self.power_sensors,
                 self._power_changed
@@ -495,7 +494,7 @@ class StromkostenCostYearlyPrognosis(SensorEntity):
         await self.async_update()
 
     @callback
-    def _power_changed(self, entity_id, old_state, new_state):
+    def _power_changed(self, event):
         self.async_schedule_update_ha_state(force_refresh=True)
 
     async def async_update(self) -> None:
@@ -553,7 +552,7 @@ class SolarYieldYearly(SensorEntity):
         
         if self.solar_yield_day:
             self.async_on_remove(
-                async_track_state_change(
+                async_track_state_change_event(
                     self.hass,
                     self.solar_yield_day,
                     self._yield_changed
@@ -562,7 +561,7 @@ class SolarYieldYearly(SensorEntity):
         await self.async_update()
 
     @callback
-    def _yield_changed(self, entity_id, old_state, new_state):
+    def _yield_changed(self, event):
         self.async_schedule_update_ha_state(force_refresh=True)
 
     async def async_update(self) -> None:

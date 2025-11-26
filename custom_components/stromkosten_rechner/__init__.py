@@ -66,10 +66,13 @@ async def _copy_card_to_www_async(hass: HomeAssistant) -> None:
         card_dest = www_dir / "stromkosten-rechner-card.js"
         
         if card_src.exists():
-            with open(card_src, 'r') as f:
-                content = f.read()
-            with open(card_dest, 'w') as f:
-                f.write(content)
+            def _copy_file():
+                with open(card_src, 'r') as f:
+                    content = f.read()
+                with open(card_dest, 'w') as f:
+                    f.write(content)
+            
+            await hass.async_add_executor_job(_copy_file)
             _LOGGER.info("Card-Datei kopiert nach: %s", card_dest)
         else:
             _LOGGER.warning("Card-Quelldatei nicht gefunden: %s", card_src)
