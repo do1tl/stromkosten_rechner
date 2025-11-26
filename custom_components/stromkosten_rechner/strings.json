@@ -2,31 +2,47 @@
   "config": {
     "step": {
       "user": {
-        "title": "Stromkosten Rechner Konfiguration",
-        "description": "Konfiguriere die Sensoren für deinen Stromzähler",
+        "title": "⚡ Stromkosten Rechner Konfiguration",
+        "description": "Konfiguriere deine Sensoren für Stromverbrauch und Kosten",
         "data": {
-          "power_sensors": "Stromleistungs-Sensoren (eine pro Zeile)",
-          "solar_power": "Solar-Leistungs-Sensor",
-          "solar_yield_day": "Solar-Ertrag (Tagesertrag) Sensor",
-          "yearly_start_day": "Jährlicher Ablesetermin (Tag, 1-31)",
-          "cost_per_kwh": "Stromkosten pro kWh (€)"
+          "power_sensors": "Stromleistungs-Sensoren (eine Entity-ID pro Zeile)",
+          "solar_power": "Solar-Leistungs-Sensor (optional)",
+          "solar_yield_day": "Solar-Tagesertrag Sensor (optional)",
+          "yearly_start_month": "Ablesetermin - Monat",
+          "yearly_start_day": "Ablesetermin - Tag",
+          "cost_per_kwh": "Strompreis pro kWh"
+        },
+        "data_description": {
+          "power_sensors": "Gib hier die Entity-IDs deiner Stromzähler ein. Jede ID in eine neue Zeile.",
+          "solar_power": "Wenn du Solar hast, wähle hier den Leistungs-Sensor",
+          "solar_yield_day": "Sensor für den täglichen Solar-Ertrag",
+          "yearly_start_month": "Monat für den jährlichen Zählerwechsel/Ablesung",
+          "yearly_start_day": "Tag für den jährlichen Zählerwechsel/Ablesung",
+          "cost_per_kwh": "Dein aktueller Strompreis (z.B. 0.30 für 30 Cent/kWh)"
         }
       }
+    },
+    "error": {
+      "invalid_day_for_month": "Der gewählte Tag ist für diesen Monat ungültig (z.B. 31. Februar)"
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Stromkosten Rechner Optionen",
+        "title": "⚙️ Stromkosten Rechner Optionen",
         "description": "Bearbeite die Sensor-Konfiguration",
         "data": {
           "power_sensors": "Stromleistungs-Sensoren (eine pro Zeile)",
-          "solar_power": "Solar-Leistungs-Sensor",
-          "solar_yield_day": "Solar-Ertrag Sensor",
-          "yearly_start_day": "Jährlicher Ablesetermin (Tag, 1-31)",
-          "cost_per_kwh": "Stromkosten pro kWh (€)"
+          "solar_power": "Solar-Leistungs-Sensor (optional)",
+          "solar_yield_day": "Solar-Ertrag Sensor (optional)",
+          "yearly_start_month": "Ablesetermin - Monat",
+          "yearly_start_day": "Ablesetermin - Tag",
+          "cost_per_kwh": "Strompreis pro kWh"
         }
       }
+    },
+    "error": {
+      "invalid_day_for_month": "Der gewählte Tag ist für diesen Monat ungültig"
     }
   }
 }
